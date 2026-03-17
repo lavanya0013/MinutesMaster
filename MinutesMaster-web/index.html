@@ -1,0 +1,278 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>MinutesMaster — AI Meeting Assistant</title>
+  <meta name="description" content="Capture, transcribe, and summarize meetings privately in your browser. No data leaves your device." />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+
+  <!-- SIDEBAR -->
+  <aside class="sidebar" id="sidebar">
+    <div class="sidebar-header">
+      <div class="logo">
+        <div class="logo-icon">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+            <path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3Z"/>
+            <path d="M19 10v2a7 7 0 0 1-14 0v-2"/>
+            <line x1="12" y1="19" x2="12" y2="22"/>
+            <line x1="8" y1="22" x2="16" y2="22"/>
+          </svg>
+        </div>
+        <span class="logo-text">MinutesMaster</span>
+      </div>
+      <button class="sidebar-close" id="sidebarClose" aria-label="Close sidebar">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+      </button>
+    </div>
+
+    <nav class="sidebar-nav">
+      <button class="nav-item active" data-view="dashboard" id="navDashboard">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/></svg>
+        Dashboard
+      </button>
+      <button class="nav-item" data-view="record" id="navRecord">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="4" fill="currentColor" stroke="none"/></svg>
+        New Recording
+      </button>
+      <button class="nav-item" data-view="meetings" id="navMeetings">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
+        Meetings
+      </button>
+      <button class="nav-item" data-view="settings" id="navSettings">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+        Settings
+      </button>
+    </nav>
+
+    <div class="sidebar-footer">
+      <div class="privacy-label">
+        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+        Private &amp; local only
+      </div>
+    </div>
+  </aside>
+
+  <!-- MAIN CONTENT -->
+  <div class="main-wrapper">
+    <header class="topbar">
+      <button class="menu-btn" id="menuBtn" aria-label="Open menu">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
+      </button>
+      <span class="topbar-title" id="topbarTitle">Dashboard</span>
+      <div class="topbar-right">
+        <button class="theme-toggle" id="themeToggle" title="Toggle light/dark mode" aria-label="Toggle theme">
+          <!-- Sun icon (shown in dark mode) -->
+          <svg id="iconSun" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="display:none">
+            <circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/>
+            <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/>
+            <line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/>
+            <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/>
+          </svg>
+          <!-- Moon icon (shown in light mode) -->
+          <svg id="iconMoon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/>
+          </svg>
+        </button>
+        <span class="speech-status" id="statusDot" title="Speech API status"></span>
+      </div>
+    </header>
+
+    <main class="content">
+
+      <!-- ===== DASHBOARD ===== -->
+      <section class="view active" id="viewDashboard">
+        <div class="page-header">
+          <div>
+            <h1>Dashboard</h1>
+            <p class="page-sub">All your meetings, kept private.</p>
+          </div>
+          <button class="btn-primary" id="quickRecord">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="4" fill="currentColor" stroke="none"/></svg>
+            New Recording
+          </button>
+        </div>
+
+        <div class="stats-row">
+          <div class="stat-box">
+            <div class="stat-num" id="statMeetings">0</div>
+            <div class="stat-lbl">Meetings</div>
+          </div>
+          <div class="stat-box">
+            <div class="stat-num" id="statTime">0m</div>
+            <div class="stat-lbl">Total Time</div>
+          </div>
+          <div class="stat-box">
+            <div class="stat-num" id="statWords">0</div>
+            <div class="stat-lbl">Words Transcribed</div>
+          </div>
+        </div>
+
+        <div class="section-label">Recent Meetings</div>
+        <div id="recentMeetings" class="meeting-list"></div>
+      </section>
+
+      <!-- ===== RECORD ===== -->
+      <section class="view" id="viewRecord">
+        <div class="page-header">
+          <div>
+            <h1>New Recording</h1>
+            <p class="page-sub">Speak naturally — transcription happens live in your browser.</p>
+          </div>
+        </div>
+
+        <div class="record-layout">
+          <div class="field-group">
+            <label class="field-label" for="meetingName">Meeting name</label>
+            <input class="field-input" type="text" id="meetingName" placeholder="e.g. Team standup, Design review…" autocomplete="off" />
+          </div>
+
+          <div class="recorder-card">
+            <canvas id="waveCanvas" height="60"></canvas>
+            <div class="rec-info">
+              <span class="rec-badge" id="recDot"></span>
+              <span class="rec-label" id="recStatusText">Ready</span>
+            </div>
+            <div class="rec-timer" id="recTimer">00:00</div>
+          </div>
+
+          <div class="rec-btn-row">
+            <button class="btn-record" id="btnRecord" aria-label="Start recording">
+              <span id="btnRecordInner">
+                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="4" fill="currentColor" stroke="none"/></svg>
+              </span>
+            </button>
+          </div>
+          <p class="rec-hint" id="recordHint">Click to start recording and transcribing</p>
+
+          <div class="transcript-card">
+            <div class="transcript-toolbar">
+              <span class="transcript-label">Live Transcript</span>
+              <button class="btn-text-sm" id="clearTranscript">Clear</button>
+            </div>
+            <div class="transcript-body" id="transcriptBody">
+              <span class="placeholder-text">Your transcription will appear here as you speak…</span>
+            </div>
+          </div>
+
+          <div id="saveSection" style="display:none; margin-top:12px;">
+            <button class="btn-primary w-full" id="btnSaveMeeting">Save Meeting</button>
+          </div>
+        </div>
+      </section>
+
+      <!-- ===== MEETINGS ===== -->
+      <section class="view" id="viewMeetings">
+        <div class="page-header">
+          <div>
+            <h1>Meetings</h1>
+            <p class="page-sub">All data is stored locally in your browser.</p>
+          </div>
+          <button class="btn-secondary" id="exportAllBtn">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+            Export All
+          </button>
+        </div>
+        <div id="allMeetingsList" class="meeting-list"></div>
+      </section>
+
+      <!-- ===== DETAIL ===== -->
+      <section class="view" id="viewDetail">
+        <div class="page-header detail-header">
+          <button class="btn-back" id="btnBack">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="15 18 9 12 15 6"/></svg>
+            Back
+          </button>
+          <div class="detail-header-actions">
+            <button class="btn-secondary btn-sm" id="btnExportDetail">Export</button>
+            <button class="btn-danger btn-sm" id="btnDeleteDetail">Delete</button>
+          </div>
+        </div>
+
+        <div class="detail-body">
+          <div class="detail-title-block">
+            <h1 id="detailTitle">Meeting</h1>
+            <div class="detail-meta-row">
+              <span class="meta-chip" id="detailDate"></span>
+              <span class="meta-chip" id="detailDuration"></span>
+              <span class="meta-chip" id="detailWords"></span>
+            </div>
+          </div>
+
+          <div class="tab-row">
+            <button class="tab-btn active" data-tab="transcript">Transcript</button>
+            <button class="tab-btn" data-tab="summary">AI Summary</button>
+          </div>
+
+          <div class="tab-panel active" id="tabTranscript">
+            <div class="transcript-full" id="detailTranscript"></div>
+          </div>
+
+          <div class="tab-panel" id="tabSummary">
+            <div class="summary-bar">
+              <button class="btn-primary btn-sm" id="btnGenerateSummary">Generate Summary</button>
+              <span class="summary-bar-note">via Ollama (local) or your configured provider</span>
+            </div>
+            <div class="summary-area" id="detailSummary">
+              <div class="empty-panel">
+                <p>No summary yet. Click Generate Summary above.</p>
+                <p class="hint-text">Requires <a href="https://ollama.ai" target="_blank">Ollama</a> running locally, or configure a provider in Settings.</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ===== SETTINGS ===== -->
+      <section class="view" id="viewSettings">
+        <div class="page-header">
+          <div>
+            <h1>Settings</h1>
+            <p class="page-sub">Privacy and browser preferences.</p>
+          </div>
+        </div>
+
+        <div class="settings-layout">
+
+          <div class="settings-block">
+            <div class="block-title">Data &amp; Privacy</div>
+            <p class="block-desc">All meeting data lives in your browser's localStorage. Nothing is sent to any server.</p>
+            <button class="btn-danger btn-sm" id="btnClearAll">Clear All Meetings</button>
+          </div>
+
+          <div class="settings-block">
+            <div class="block-title">Browser Compatibility</div>
+            <p class="block-desc">Live transcription requires the Web Speech API, available in Chrome and Edge.</p>
+            <p class="compat-status" id="compatStatus"></p>
+          </div>
+        </div>
+      </section>
+
+    </main>
+  </div>
+
+  <!-- TOAST -->
+  <div class="toast" id="toast"></div>
+
+  <!-- CONFIRM MODAL -->
+  <div class="modal-overlay" id="modalOverlay">
+    <div class="modal">
+      <div class="modal-title" id="modalTitle">Confirm</div>
+      <div class="modal-body" id="modalBody">This cannot be undone.</div>
+      <div class="modal-actions">
+        <button class="btn-secondary" id="modalCancel">Cancel</button>
+        <button class="btn-danger" id="modalConfirm">Delete</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="storage.js"></script>
+  <script src="recorder.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>
