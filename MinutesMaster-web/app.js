@@ -1,6 +1,4 @@
-/* =============================================
-   APP.JS — MinutesMaster main controller
-   ============================================= */
+
 
 /* ---- Router ---- */
 let currentView = 'dashboard';
@@ -233,7 +231,7 @@ function saveMeeting() {
     wordCount,
     transcript: fullText,
     segments,
-    summary: null,
+    mom: null,
   };
 
   Storage.saveMeeting(meeting);
@@ -265,15 +263,13 @@ function openMeeting(id) {
   document.getElementById('detailWords').textContent = `${(m.wordCount || 0).toLocaleString()} words`;
   document.getElementById('detailTranscript').textContent = m.transcript || '(No transcript recorded)';
 
-  const summaryEl = document.getElementById('detailSummary');
-  if (m.summary) {
-    summaryEl.innerHTML = `<div class="summary-text">${escHtml(m.summary)}</div>`;
+  const momEl = document.getElementById('detailMom');
+  if (m.mom) {
+    momEl.innerHTML = renderMoM(m.mom);
   } else {
-    summaryEl.innerHTML = `
-      <div class="empty-panel">
-        <p>No summary yet. Click Generate Summary above.</p>
-        <p class="hint-text">Requires <a href="https://ollama.ai" target="_blank">Ollama</a> running locally, or configure a provider in Settings.</p>
-      </div>`;
+    momEl.innerHTML = `<div class="empty-panel"><div class="loading-wrap"><div class="spinner"></div><span>Generating minutes…</span></div></div>`;
+    // auto-generate
+    setTimeout(() => generateMoM(id), 100);
   }
 
   showTab('transcript');
@@ -289,130 +285,411 @@ function showTab(name) {
   document.querySelectorAll('.tab-btn').forEach(b =>
     b.classList.toggle('active', b.dataset.tab === name));
   document.getElementById('tabTranscript').classList.toggle('active', name === 'transcript');
-  document.getElementById('tabSummary').classList.toggle('active', name === 'summary');
+  document.getElementById('tabMom').classList.toggle('active', name === 'mom');
 }
 
-/* ---- AI Summary ---- */
-async function generateSummary() {
-  const m = Storage.getMeeting(currentMeetingId);
+/* ---- Minutes of Meeting Generator ---- */
+
+/**
+ * Generate MoM from a meeting's transcript and store it.
+ * @param {string} id - meeting id
+ */
+async function generateMoM(id) {
+  const m = Storage.getMeeting(id || currentMeetingId);
   if (!m) return;
-  if (!m.transcript) { showToast('No transcript to summarize'); return; }
+  if (!m.transcript || m.transcript.trim().length < 20) {
+    document.getElementById('detailMom').innerHTML =
+      `<div class="empty-panel"><p>Transcript too short to generate minutes.</p></div>`;
+    return;
+  }
+
+  const momEl = document.getElementById('detailMom');
+  if (momEl) momEl.innerHTML = `<div class="loading-wrap"><div class="spinner"></div><span>Generating minutes…</span></div>`;
 
   const settings = Storage.getSettings();
-  const provider = settings.aiProvider || 'ollama';
-  const summaryEl = document.getElementById('detailSummary');
+  const mom = buildMoM(m, settings);
+  Storage.updateMoM(m.id, mom);
 
-  summaryEl.innerHTML = `<div class="loading-wrap"><div class="spinner"></div><span>Generating summary…</span></div>`;
-
-  try {
-    let summary = '';
-    if (provider === 'ollama') {
-      summary = await callOllama(m.transcript, settings.ollamaModel || 'llama3');
-    } else {
-      summary = await callOpenAICompat(m.transcript, settings);
-    }
-    Storage.updateSummary(currentMeetingId, summary);
-    summaryEl.innerHTML = `<div class="summary-text">${escHtml(summary)}</div>`;
-    showToast('Summary generated');
-  } catch (err) {
-    summaryEl.innerHTML = `
-      <div class="empty-panel">
-        <p style="color:#dc2626">Error: ${escHtml(err.message)}</p>
-        <p class="hint-text">Make sure Ollama is running: <code>ollama serve</code></p>
-      </div>`;
-    showToast('Summary failed — see the Summary tab for details');
+  // If we're currently viewing this meeting, refresh the panel
+  if (currentMeetingId === m.id && momEl) {
+    momEl.innerHTML = renderMoM(mom);
   }
 }
 
-async function callOllama(text, model) {
-  const res = await fetch('http://localhost:11434/api/generate', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ model, prompt: buildPrompt(text), stream: false }),
-  });
-  if (!res.ok) throw new Error(`Ollama returned ${res.status}`);
-  const data = await res.json();
-  return data.response || '';
-}
+/**
+ * Build a structured Minutes of Meeting object from transcript + metadata.
+ */
+function buildMoM(meeting, settings = {}) {
+  const text = meeting.transcript || '';
+  const sentences = text.match(/[^.!?]+[.!?]+/g) || text.split('\n').filter(Boolean);
 
-async function callOpenAICompat(text, settings) {
-  const baseUrl = settings.baseUrl || 'https://api.openai.com/v1';
-  const model = settings.modelName || 'gpt-4o';
-  const res = await fetch(`${baseUrl}/chat/completions`, {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      'Authorization': `Bearer ${settings.apiKey || ''}`,
+  return {
+    generatedAt: new Date().toISOString(),
+    header: {
+      title: meeting.name || 'Meeting',
+      date: meeting.createdAt,
+      duration: meeting.durationSeconds || 0,
+      organiser: settings.momOrganiser || '',
+      location: settings.momLocation || '',
+      wordCount: meeting.wordCount || 0,
     },
-    body: JSON.stringify({
-      model,
-      messages: [{ role: 'user', content: buildPrompt(text) }],
-    }),
-  });
-  if (!res.ok) throw new Error(`API returned ${res.status}`);
-  const data = await res.json();
-  return data.choices?.[0]?.message?.content || '';
+    discussionPoints: extractDiscussionPoints(sentences),
+    decisions: extractDecisions(sentences),
+    actionItems: extractActionItems(sentences),
+    closingNotes: extractClosingNotes(sentences),
+    rawTranscript: text,
+  };
 }
 
-function buildPrompt(transcript) {
-  return `You are a professional meeting note-taker. Analyze the transcript below and produce:
-
-1. Summary (2-3 sentences)
-2. Key Discussion Points (bullet list)
-3. Action Items (what needs to be done, and by whom if mentioned)
-4. Decisions Made
-
-Be concise and clear.
-
-TRANSCRIPT:
-${transcript}`;
-}
-
-/* ---- Export ---- */
-function exportMeeting(id) {
-  const m = Storage.getMeeting(id);
-  if (!m) return;
-  const lines = [
-    `# ${m.name || 'Meeting'}`,
-    `Date: ${formatDate(m.createdAt)}`,
-    `Duration: ${formatDuration(m.durationSeconds || 0)}`,
-    `Words: ${m.wordCount || 0}`,
-    '',
-    '## Transcript',
-    m.transcript || '(no transcript)',
+/** Extract key discussion topics from sentences */
+function extractDiscussionPoints(sentences) {
+  const keywords = [
+    /\bwe (need|should|must|have to|want to|plan to|are going to)\b/i,
+    /\blet'?s\b/i,
+    /\bthe (main|key|important|primary|critical)\b/i,
+    /\b(discussed|talking about|mentioned|regarding|concerning|about)\b/i,
+    /\b(issue|problem|challenge|concern|topic|point|question|update|status)\b/i,
+    /\b(propose|suggest|recommend|idea|option|approach|solution)\b/i,
   ];
-  if (m.summary) lines.push('', '## AI Summary', m.summary);
-  const blob = new Blob([lines.join('\n')], { type: 'text/markdown' });
-  const a = document.createElement('a');
-  a.href = URL.createObjectURL(blob);
-  a.download = `${(m.name || 'meeting').replace(/\s+/g, '-')}.md`;
-  a.click();
-  URL.revokeObjectURL(a.href);
-  showToast('Meeting exported as Markdown');
+  const seen = new Set();
+  const points = [];
+  for (const s of sentences) {
+    const clean = s.replace(/\s+/g, ' ').trim();
+    if (clean.length < 15 || clean.length > 300) continue;
+    if (keywords.some(k => k.test(clean))) {
+      const norm = clean.toLowerCase().slice(0, 60);
+      if (!seen.has(norm)) {
+        seen.add(norm);
+        points.push(cap1(clean));
+        if (points.length >= 10) break;
+      }
+    }
+  }
+  // fallback: pick evenly-distributed sentences
+  if (points.length < 3 && sentences.length > 0) {
+    const step = Math.max(1, Math.floor(sentences.length / 5));
+    for (let i = 0; i < sentences.length && points.length < 5; i += step) {
+      const clean = sentences[i].replace(/\s+/g, ' ').trim();
+      if (clean.length >= 15) points.push(cap1(clean));
+    }
+  }
+  return points;
 }
 
-function exportAll() {
-  const meetings = Storage.getMeetings();
-  if (!meetings.length) { showToast('No meetings to export'); return; }
-  const blob = new Blob([JSON.stringify(meetings, null, 2)], { type: 'application/json' });
-  const a = document.createElement('a');
-  a.href = URL.createObjectURL(blob);
-  a.download = `minutesmaster-export-${Date.now()}.json`;
-  a.click();
-  URL.revokeObjectURL(a.href);
-  showToast('All meetings exported');
+/** Extract decisions made */
+function extractDecisions(sentences) {
+  const keywords = [
+    /\b(decided|agreed|confirmed|resolved|approved|accepted|finalized|settled on|chose|selected)\b/i,
+    /\bwe (will|are going to|shall|are going with)\b/i,
+    /\b(go ahead|move forward|proceed|sign off)\b/i,
+    /\b(decision|conclusion|result|outcome)\b/i,
+  ];
+  const seen = new Set();
+  const decisions = [];
+  for (const s of sentences) {
+    const clean = s.replace(/\s+/g, ' ').trim();
+    if (clean.length < 15 || clean.length > 250) continue;
+    if (keywords.some(k => k.test(clean))) {
+      const norm = clean.toLowerCase().slice(0, 60);
+      if (!seen.has(norm)) {
+        seen.add(norm);
+        decisions.push(cap1(clean));
+        if (decisions.length >= 7) break;
+      }
+    }
+  }
+  return decisions;
 }
+
+/** Extract action items / follow-ups */
+function extractActionItems(sentences) {
+  const keywords = [
+    /\b(action|follow.?up|task|to.?do|assign|responsible|owner|deadline|by (monday|tuesday|wednesday|thursday|friday|next week|tomorrow|end of|eod|eow))\b/i,
+    /\b(will (send|share|update|check|review|prepare|create|build|fix|test|complete|schedule|reach out|contact|inform|look into|get back))\b/i,
+    /\b(need to|needs to|must|has to|have to) (send|share|update|check|review|prepare|create|build|fix|test|complete|schedule|reach out)\b/i,
+    /\b(please|make sure|ensure|don't forget)\b/i,
+  ];
+  const seen = new Set();
+  const actions = [];
+  for (const s of sentences) {
+    const clean = s.replace(/\s+/g, ' ').trim();
+    if (clean.length < 15 || clean.length > 250) continue;
+    if (keywords.some(k => k.test(clean))) {
+      const norm = clean.toLowerCase().slice(0, 60);
+      if (!seen.has(norm)) {
+        seen.add(norm);
+        actions.push(cap1(clean));
+        if (actions.length >= 10) break;
+      }
+    }
+  }
+  return actions;
+}
+
+/** Closing / next steps */
+function extractClosingNotes(sentences) {
+  const keywords = [
+    /\b(next (meeting|session|call|sync|standup)|follow.?up meeting|reconvene|schedule)\b/i,
+    /\b(next steps|going forward|moving forward|from here|the plan is)\b/i,
+    /\b(wrap(ping)? up|closing|in summary|to summarize|overall|that'?s all|thank(s| you)( all| everyone)?)\b/i,
+  ];
+  const seen = new Set();
+  const notes = [];
+  for (const s of sentences) {
+    const clean = s.replace(/\s+/g, ' ').trim();
+    if (clean.length < 10 || clean.length > 250) continue;
+    if (keywords.some(k => k.test(clean))) {
+      const norm = clean.toLowerCase().slice(0, 60);
+      if (!seen.has(norm)) {
+        seen.add(norm);
+        notes.push(cap1(clean));
+        if (notes.length >= 5) break;
+      }
+    }
+  }
+  return notes;
+}
+
+function cap1(s) {
+  return s ? s.charAt(0).toUpperCase() + s.slice(1) : '';
+}
+
+/**
+ * Render a MoM object into HTML.
+ */
+function renderMoM(mom) {
+  if (!mom) return '<div class="empty-panel"><p>No minutes available.</p></div>';
+
+  const h = mom.header || {};
+  const fmtDate = d => d ? new Date(d).toLocaleDateString(undefined, {
+    weekday: 'long', year: 'numeric', month: 'long', day: 'numeric',
+    hour: '2-digit', minute: '2-digit',
+  }) : '—';
+
+  const section = (title, icon, items, emptyMsg) => {
+    const rows = items && items.length
+      ? items.map(i => `<li>${escHtml(i)}</li>`).join('')
+      : `<li class="mom-empty-item">${emptyMsg}</li>`;
+    return `
+      <div class="mom-section">
+        <div class="mom-section-title">${icon} ${escHtml(title)}</div>
+        <ul class="mom-list">${rows}</ul>
+      </div>`;
+  };
+
+  return `
+    <div class="mom-doc">
+      <div class="mom-header">
+        <div class="mom-doc-title">📋 Minutes of Meeting</div>
+        <table class="mom-meta-table">
+          <tr><td class="mom-meta-key">Meeting</td><td class="mom-meta-val">${escHtml(h.title || '—')}</td></tr>
+          <tr><td class="mom-meta-key">Date &amp; Time</td><td class="mom-meta-val">${fmtDate(h.date)}</td></tr>
+          <tr><td class="mom-meta-key">Duration</td><td class="mom-meta-val">${formatDuration(h.duration)}</td></tr>
+          ${h.organiser ? `<tr><td class="mom-meta-key">Organiser</td><td class="mom-meta-val">${escHtml(h.organiser)}</td></tr>` : ''}
+          ${h.location ? `<tr><td class="mom-meta-key">Location</td><td class="mom-meta-val">${escHtml(h.location)}</td></tr>` : ''}
+          <tr><td class="mom-meta-key">Words Transcribed</td><td class="mom-meta-val">${(h.wordCount || 0).toLocaleString()}</td></tr>
+          <tr><td class="mom-meta-key">Generated</td><td class="mom-meta-val">${fmtDate(mom.generatedAt)}</td></tr>
+        </table>
+      </div>
+
+      <div class="mom-divider"></div>
+
+      ${section('Key Discussion Points', '💬', mom.discussionPoints, 'Not enough context to extract discussion points.')}
+      ${section('Decisions Made', '✅', mom.decisions, 'No explicit decisions detected in the transcript.')}
+      ${section('Action Items &amp; Follow-ups', '📌', mom.actionItems, 'No action items detected in the transcript.')}
+      ${section('Closing &amp; Next Steps', '🗓️', mom.closingNotes, 'No closing remarks or next steps detected.')}
+
+      <div class="mom-footer">Generated automatically from transcript · MinutesMaster</div>
+    </div>`;
+}
+
+/* ---- Download MoM as PDF on Letterhead (jsPDF) ---- */
+async function downloadMomAsImage(id) {
+  const m = Storage.getMeeting(id || currentMeetingId);
+  if (!m || !m.mom) {
+    showToast('No minutes to download — generate them first');
+    return;
+  }
+
+  const btn = document.getElementById('btnDownloadLetterhead');
+  if (btn) { btn.disabled = true; btn.textContent = 'Generating PDF…'; }
+
+  try {
+    const mom = m.mom;
+    const h = mom.header || {};
+
+    if (!window.jspdf) {
+      showToast('PDF library not loaded yet — please wait and try again');
+      return;
+    }
+
+    const { jsPDF } = window.jspdf;
+    const lhSrc = (typeof LETTERHEAD_B64 !== 'undefined') ? LETTERHEAD_B64 : 'letterhead.png';
+
+    // A4 PDF in mm units
+    const pdf = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' });
+    const pageW  = 210;
+    const pageH  = 297;
+    const margin = 15;
+    const cW     = pageW - margin * 2; // content width
+
+    // ---- Page helper: draw letterhead background ----
+    function addLetterheadBg() {
+      pdf.addImage(lhSrc, 'PNG', 0, 0, pageW, pageH);
+    }
+
+    // ---- Text helper: add text with page-break support ----
+    // Returns new y after writing
+    function writeText(text, x, y, opts = {}) {
+      const { fontSize = 10, fontStyle = 'normal', color = [20, 20, 20], maxW = cW } = opts;
+      pdf.setFontSize(fontSize);
+      pdf.setFont('helvetica', fontStyle);
+      pdf.setTextColor(...color);
+      const lines = pdf.splitTextToSize(String(text), maxW);
+      for (const line of lines) {
+        if (y > pageH - 14) { // near bottom — new page
+          pdf.addPage();
+          addLetterheadBg();
+          y = 42;
+        }
+        pdf.text(line, x, y);
+        y += fontSize * 0.45;
+      }
+      return y;
+    }
+
+    // ---- Draw first page ----
+    addLetterheadBg();
+
+    // Start content below the RAIT header (~50mm from top, clear of logo)
+    let y = 52;
+
+    // Separator line
+    pdf.setDrawColor(139, 0, 0);
+    pdf.setLineWidth(0.6);
+    pdf.line(margin, y, pageW - margin, y);
+    y += 6;
+
+    // Document title
+    y = writeText('MINUTES OF MEETING', margin, y, {
+      fontSize: 15, fontStyle: 'bold', color: [139, 0, 0],
+    });
+    y += 3;
+
+    // Metadata
+    const fmtDate = d => d ? new Date(d).toLocaleDateString(undefined, {
+      weekday: 'long', year: 'numeric', month: 'long', day: 'numeric',
+      hour: '2-digit', minute: '2-digit',
+    }) : '—';
+
+    const metaRows = [
+      ['Meeting',           h.title || '—'],
+      ['Date & Time',       fmtDate(h.date)],
+      ['Duration',          formatDuration(h.duration || 0)],
+      ...(h.organiser ? [['Organiser', h.organiser]] : []),
+      ...(h.location  ? [['Location',  h.location]]  : []),
+      ['Words Transcribed', (h.wordCount || 0).toLocaleString()],
+      ['Generated',         fmtDate(mom.generatedAt)],
+    ];
+
+    for (const [key, val] of metaRows) {
+      if (y > pageH - 14) { pdf.addPage(); addLetterheadBg(); y = 42; }
+      pdf.setFontSize(9);
+      pdf.setFont('helvetica', 'bold');
+      pdf.setTextColor(80, 80, 80);
+      pdf.text(key + ':', margin, y);
+      pdf.setFont('helvetica', 'normal');
+      pdf.setTextColor(20, 20, 20);
+      const lines = pdf.splitTextToSize(String(val), cW - 42);
+      pdf.text(lines, margin + 42, y);
+      y += lines.length * 4.2 + 0.8;
+    }
+    y += 4;
+
+    // ---- Section helper ----
+    function addSection(title, items, emptyMsg) {
+      if (y > pageH - 30) { pdf.addPage(); addLetterheadBg(); y = 42; }
+
+      // Section heading
+      pdf.setFontSize(11);
+      pdf.setFont('helvetica', 'bold');
+      pdf.setTextColor(139, 0, 0);
+      pdf.text(title, margin, y);
+      y += 2;
+      pdf.setDrawColor(200, 200, 200);
+      pdf.setLineWidth(0.3);
+      pdf.line(margin, y, pageW - margin, y);
+      y += 5;
+
+      // Items
+      const list = (items && items.length) ? items : [emptyMsg];
+      pdf.setFontSize(9.5);
+      pdf.setFont('helvetica', 'normal');
+      pdf.setTextColor(30, 30, 30);
+      for (const item of list) {
+        if (y > pageH - 14) { pdf.addPage(); addLetterheadBg(); y = 42; }
+        const lines = pdf.splitTextToSize('\u2022  ' + item, cW - 4);
+        pdf.text(lines, margin + 2, y);
+        y += lines.length * 4.5 + 1.5;
+      }
+      y += 5;
+    }
+
+    addSection('Key Discussion Points',    mom.discussionPoints, 'No discussion points detected.');
+    addSection('Decisions Made',           mom.decisions,        'No explicit decisions detected.');
+    addSection('Action Items & Follow-ups',mom.actionItems,      'No action items detected.');
+    addSection('Closing & Next Steps',     mom.closingNotes,     'No closing remarks detected.');
+
+    // Footer on every page
+    const totalPages = pdf.getNumberOfPages();
+    for (let p = 1; p <= totalPages; p++) {
+      pdf.setPage(p);
+      pdf.setFontSize(7);
+      pdf.setFont('helvetica', 'italic');
+      pdf.setTextColor(160, 160, 160);
+      pdf.text(
+        'Generated automatically \u00b7 MinutesMaster \u00b7 Ramrao Adik Institute of Technology',
+        margin, pageH - 6
+      );
+      pdf.text(`Page ${p} of ${totalPages}`, pageW - margin, pageH - 6, { align: 'right' });
+    }
+
+    // ---- Save via File System Access API (works on file://) ----
+    const fileName = `${(m.name || 'meeting').replace(/\s+/g, '-')}-MoM-Letterhead.pdf`;
+    if (window.showSaveFilePicker) {
+      const pdfBlob = pdf.output('blob');
+      const fileHandle = await window.showSaveFilePicker({
+        suggestedName: fileName,
+        types: [{ description: 'PDF Document', accept: { 'application/pdf': ['.pdf'] } }],
+      });
+      const writable = await fileHandle.createWritable();
+      await writable.write(pdfBlob);
+      await writable.close();
+    } else {
+      pdf.save(fileName);
+    }
+
+    showToast('PDF saved \u2713');
+  } catch (err) {
+    if (err && err.name === 'AbortError') return; // user cancelled Save dialog
+    console.error('Letterhead PDF failed:', err);
+    showToast('PDF generation failed \u2014 check console');
+  } finally {
+    if (btn) {
+      btn.disabled = false;
+      btn.innerHTML = '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="vertical-align:-2px;margin-right:4px"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>Download Letterhead';
+    }
+  }
+}
+
 
 /* ---- Settings ---- */
 function loadSettings() {
   const s = Storage.getSettings();
-  const provider = s.aiProvider || 'ollama';
-  document.getElementById('aiProvider').value = provider;
-  document.getElementById('ollamaModel').value = s.ollamaModel || 'llama3';
-  document.getElementById('apiKey').value = s.apiKey || '';
-  document.getElementById('baseUrl').value = s.baseUrl || '';
-  document.getElementById('modelName').value = s.modelName || '';
-  updateProviderFields(provider);
+  const organiserEl = document.getElementById('momOrganiser');
+  const locationEl  = document.getElementById('momLocation');
+  if (organiserEl) organiserEl.value = s.momOrganiser || '';
+  if (locationEl)  locationEl.value  = s.momLocation  || '';
 
   const compat = document.getElementById('compatStatus');
   const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
@@ -425,21 +702,10 @@ function loadSettings() {
   }
 }
 
-function updateProviderFields(provider) {
-  document.getElementById('settingOllamaModel').classList.toggle('hidden', provider !== 'ollama');
-  document.getElementById('settingApiKey').classList.toggle('hidden', provider === 'ollama');
-  document.getElementById('settingBaseUrl').classList.toggle('hidden', provider !== 'custom');
-  document.getElementById('settingModel').classList.toggle('hidden', provider === 'ollama');
-}
-
 function saveSettings() {
-  const provider = document.getElementById('aiProvider').value;
   Storage.saveSettings({
-    aiProvider: provider,
-    ollamaModel: document.getElementById('ollamaModel').value.trim(),
-    apiKey: document.getElementById('apiKey').value.trim(),
-    baseUrl: document.getElementById('baseUrl').value.trim(),
-    modelName: document.getElementById('modelName').value.trim(),
+    momOrganiser: (document.getElementById('momOrganiser').value || '').trim(),
+    momLocation:  (document.getElementById('momLocation').value  || '').trim(),
   });
   const fb = document.getElementById('settingsFeedback');
   fb.textContent = 'Settings saved.';
@@ -502,20 +768,15 @@ document.addEventListener('DOMContentLoaded', () => {
       showToast('Meeting deleted');
       showView('meetings');
     }));
-  document.getElementById('btnExportDetail').addEventListener('click', () =>
-    exportMeeting(currentMeetingId));
-  document.getElementById('btnGenerateSummary').addEventListener('click', generateSummary);
+  document.getElementById('btnRegenerateMom').addEventListener('click', () => generateMoM(currentMeetingId));
+  document.getElementById('btnDownloadLetterhead').addEventListener('click', () => downloadMomAsImage(currentMeetingId));
 
   // Tabs
   document.querySelectorAll('.tab-btn').forEach(btn =>
     btn.addEventListener('click', () => showTab(btn.dataset.tab)));
 
-  // Meetings view
-  document.getElementById('exportAllBtn').addEventListener('click', exportAll);
 
   // Settings
-  document.getElementById('aiProvider').addEventListener('change', e =>
-    updateProviderFields(e.target.value));
   document.getElementById('btnSaveSettings').addEventListener('click', saveSettings);
   document.getElementById('btnClearAll').addEventListener('click', () =>
     showConfirm('Clear All Meetings', 'This will permanently delete ALL your meetings and cannot be undone.', () => {

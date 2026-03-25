@@ -173,10 +173,6 @@
             <h1>Meetings</h1>
             <p class="page-sub">All data is stored locally in your browser.</p>
           </div>
-          <button class="btn-secondary" id="exportAllBtn">
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
-            Export All
-          </button>
         </div>
         <div id="allMeetingsList" class="meeting-list"></div>
       </section>
@@ -189,7 +185,6 @@
             Back
           </button>
           <div class="detail-header-actions">
-            <button class="btn-secondary btn-sm" id="btnExportDetail">Export</button>
             <button class="btn-danger btn-sm" id="btnDeleteDetail">Delete</button>
           </div>
         </div>
@@ -206,22 +201,26 @@
 
           <div class="tab-row">
             <button class="tab-btn active" data-tab="transcript">Transcript</button>
-            <button class="tab-btn" data-tab="summary">AI Summary</button>
+            <button class="tab-btn" data-tab="mom">Minutes of Meeting</button>
           </div>
 
           <div class="tab-panel active" id="tabTranscript">
             <div class="transcript-full" id="detailTranscript"></div>
           </div>
 
-          <div class="tab-panel" id="tabSummary">
-            <div class="summary-bar">
-              <button class="btn-primary btn-sm" id="btnGenerateSummary">Generate Summary</button>
-              <span class="summary-bar-note">via Ollama (local) or your configured provider</span>
+          <div class="tab-panel" id="tabMom">
+            <div class="mom-toolbar">
+              <span class="mom-toolbar-label">Auto-generated from transcript</span>
+              <div style="display:flex;gap:8px;">
+                <button class="btn-secondary btn-sm" id="btnDownloadLetterhead">
+                  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="vertical-align:-2px;margin-right:4px"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>Download Letterhead
+                </button>
+                <button class="btn-secondary btn-sm" id="btnRegenerateMom">↻ Regenerate</button>
+              </div>
             </div>
-            <div class="summary-area" id="detailSummary">
+            <div class="mom-area" id="detailMom">
               <div class="empty-panel">
-                <p>No summary yet. Click Generate Summary above.</p>
-                <p class="hint-text">Requires <a href="https://ollama.ai" target="_blank">Ollama</a> running locally, or configure a provider in Settings.</p>
+                <p>No minutes yet. Save a meeting to auto-generate.</p>
               </div>
             </div>
           </div>
@@ -238,6 +237,17 @@
         </div>
 
         <div class="settings-layout">
+
+          <div class="settings-block">
+            <div class="block-title">Minutes of Meeting</div>
+            <p class="block-desc">Minutes are generated automatically when you save a meeting. They are produced entirely in your browser — no data is sent anywhere.</p>
+            <label class="field-label" for="momMeetingTitle" style="margin-top:10px">Default Meeting Chair / Organiser (optional)</label>
+            <input class="field-input" type="text" id="momOrganiser" placeholder="e.g. John Smith" autocomplete="off" style="margin-bottom:8px" />
+            <label class="field-label" for="momLocation">Default Location / Platform (optional)</label>
+            <input class="field-input" type="text" id="momLocation" placeholder="e.g. Google Meet, Room 101" autocomplete="off" style="margin-bottom:8px" />
+            <button class="btn-primary btn-sm" id="btnSaveSettings" style="margin-top:4px">Save</button>
+            <span class="settings-feedback" id="settingsFeedback"></span>
+          </div>
 
           <div class="settings-block">
             <div class="block-title">Data &amp; Privacy</div>
@@ -271,8 +281,14 @@
     </div>
   </div>
 
+  <!-- html2canvas for letterhead image download -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+  <!-- jsPDF for generating a proper PDF with letterhead -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
   <script src="storage.js"></script>
   <script src="recorder.js"></script>
+  <!-- Letterhead base64 data (works without a server) -->
+  <script src="letterhead-data.js"></script>
   <script src="app.js"></script>
 </body>
 </html>

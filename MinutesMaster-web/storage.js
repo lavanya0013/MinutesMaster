@@ -25,11 +25,11 @@ const Storage = {
     return this.getMeetings().find(m => m.id === id) || null;
   },
 
-  updateSummary(id, summary) {
+  updateMoM(id, mom) {
     const meetings = this.getMeetings();
     const m = meetings.find(m => m.id === id);
     if (m) {
-      m.summary = summary;
+      m.mom = mom;
       localStorage.setItem(STORAGE_KEY, JSON.stringify(meetings));
     }
   },

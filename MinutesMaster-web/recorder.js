@@ -54,9 +54,30 @@ class MeetingRecorder {
     };
 
     this.recognition.onerror = (e) => {
-      if (e.error === 'no-speech') return;
-      if (e.error === 'aborted') return;
-      console.warn('Speech recognition error:', e.error);
+      const msgs = {
+        'no-speech':           null,                                        // silent — expected
+        'aborted':             null,                                        // silent — we triggered it
+        'audio-capture':       '🎙️ No microphone found. Check your mic is plugged in and not muted.',
+        'not-allowed':         '🔒 Microphone access denied. Click the 🔒 in the address bar and allow microphone.',
+        'network':             '🌐 Network error — Chrome needs internet to transcribe. Check your connection.',
+        'service-not-allowed': '⛔ Speech service blocked. Try reloading the page in Chrome or Edge.',
+        'bad-grammar':         '⚠️ Speech recognition config error.',
+        'language-not-supported': '⚠️ Language not supported by speech API.',
+      };
+      const msg = msgs[e.error];
+      if (msg === undefined) console.warn('Speech recognition error:', e.error);
+      if (msg) {
+        // Show in the transcript area AND as a toast
+        const body = document.getElementById('transcriptBody');
+        if (body) {
+          const errEl = document.createElement('div');
+          errEl.className = 't-segment';
+          errEl.style.cssText = 'color:#dc2626;font-size:13px;';
+          errEl.textContent = msg;
+          body.appendChild(errEl);
+        }
+        if (typeof showToast === 'function') showToast(msg);
+      }
     };
 
     this.recognition.onend = () => {
