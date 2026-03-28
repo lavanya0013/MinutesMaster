@@ -1,0 +1,193 @@
+/* ===============================================
+   AUTH.CSS — Login/Register pages for MinutesMaster
+   Uses the same CSS vars as style.css
+   =============================================== */
+
+:root {
+  --white: #ffffff; --bg: #f5f6f7;
+  --border: #e2e4e9; --border-strong: #c9ccd4;
+  --text: #111318; --text-secondary: #5a5f72;
+  --text-muted: #9499ad; --text-placeholder: #b0b5c4;
+  --accent: #2563eb; --accent-hover: #1d4ed8; --accent-light: #eff4ff;
+  --red: #dc2626; --red-light: #fef2f2; --red-border: #fca5a5;
+  --green: #16a34a; --green-light: #f0fdf4; --green-border: #bbf7d0;
+  --radius: 8px; --radius-sm: 5px;
+}
+[data-theme="dark"] {
+  --white: #1e2028; --bg: #141519;
+  --border: #2c2f3a; --border-strong: #3a3e4d;
+  --text: #e8eaf2; --text-secondary: #9096b0;
+  --text-muted: #595e74; --text-placeholder: #484d60;
+  --accent: #3b82f6; --accent-hover: #2563eb; --accent-light: #1a2340;
+  --red: #f87171; --red-light: #2a1a1a; --red-border: #7f1d1d;
+  --green: #4ade80; --green-light: #052e16; --green-border: #166534;
+}
+
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+html { -webkit-font-smoothing: antialiased; }
+
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  font-size: 14px; line-height: 1.5;
+  min-height: 100vh;
+  display: flex; align-items: center; justify-content: center; padding: 24px;
+}
+
+/* ─── Auth card ─── */
+.auth-card {
+  background: var(--white);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 36px 32px;
+  width: 100%; max-width: 430px;
+  animation: fadeUp 0.2s ease;
+}
+@keyframes fadeUp {
+  from { opacity: 0; transform: translateY(8px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+/* ─── Logo ─── */
+.auth-logo { display: flex; align-items: center; gap: 10px; margin-bottom: 28px; }
+.auth-logo-icon {
+  width: 32px; height: 32px; background: var(--accent);
+  border-radius: var(--radius-sm);
+  display: flex; align-items: center; justify-content: center; color: white; flex-shrink: 0;
+}
+.auth-logo-text { font-size: 15px; font-weight: 700; color: var(--text); letter-spacing: -0.01em; }
+
+/* ─── Headings ─── */
+.auth-title { font-size: 20px; font-weight: 700; color: var(--text); letter-spacing: -0.02em; margin-bottom: 4px; }
+.auth-sub   { font-size: 13.5px; color: var(--text-secondary); margin-bottom: 24px; }
+
+/* ─── Fields ─── */
+.field-group { margin-bottom: 14px; }
+.field-label { display: block; font-size: 13px; font-weight: 600; color: var(--text); margin-bottom: 6px; }
+.field-input {
+  width: 100%; background: var(--white);
+  border: 1px solid var(--border-strong); border-radius: var(--radius-sm);
+  padding: 9px 12px; font-size: 14px; color: var(--text);
+  font-family: inherit; outline: none; transition: border-color 0.12s;
+}
+.field-input:focus   { border-color: var(--accent); }
+.field-input::placeholder { color: var(--text-placeholder); }
+.field-input:disabled { opacity: 0.5; cursor: not-allowed; background: var(--bg); }
+
+/* ─── Password wrapper ─── */
+.pw-wrap { position: relative; }
+.pw-wrap .field-input { padding-right: 40px; }
+.pw-toggle {
+  position: absolute; right: 10px; top: 50%; transform: translateY(-50%);
+  background: none; border: none; cursor: pointer; color: var(--text-muted);
+  padding: 2px; display: flex; align-items: center;
+}
+.pw-toggle:hover { color: var(--text); }
+
+/* ─── Buttons ─── */
+.btn-primary {
+  display: flex; align-items: center; justify-content: center; gap: 7px;
+  width: 100%; padding: 10px 16px;
+  background: var(--accent); color: white; border: 1px solid var(--accent);
+  border-radius: var(--radius-sm); font-size: 14px; font-weight: 600;
+  cursor: pointer; font-family: inherit; transition: background 0.12s; margin-top: 4px;
+}
+.btn-primary:hover    { background: var(--accent-hover); border-color: var(--accent-hover); }
+.btn-primary:disabled { opacity: 0.6; cursor: not-allowed; }
+
+.btn-secondary {
+  display: inline-flex; align-items: center; justify-content: center;
+  padding: 9px 14px; background: var(--white); color: var(--text);
+  border: 1px solid var(--border-strong); border-radius: var(--radius-sm);
+  font-size: 13.5px; font-weight: 600; cursor: pointer; font-family: inherit;
+  transition: background 0.12s; flex-shrink: 0; white-space: nowrap;
+}
+.btn-secondary:hover    { background: var(--bg); }
+.btn-secondary:disabled { opacity: 0.6; cursor: not-allowed; }
+
+.btn-outline {
+  display: inline-flex; align-items: center; gap: 6px;
+  padding: 9px 22px; background: transparent;
+  color: var(--accent); border: 1px solid var(--accent);
+  border-radius: var(--radius-sm); font-size: 13.5px; font-weight: 600;
+  cursor: pointer; font-family: inherit; text-decoration: none;
+  transition: background 0.12s;
+}
+.btn-outline:hover { background: var(--accent-light); }
+
+/* ─── OTP row ─── */
+.otp-row { display: flex; gap: 8px; align-items: flex-end; }
+.otp-row .field-input {
+  flex: 1; letter-spacing: 0.3em; font-size: 16px;
+  font-weight: 600; text-align: center;
+}
+
+/* ─── Divider ─── */
+.auth-divider { border: none; border-top: 1px solid var(--border); margin: 24px 0; }
+
+/* ─── Footer (New user / Already have account) ─── */
+.auth-footer { text-align: center; margin-top: 20px; }
+.auth-footer-text { font-size: 13px; color: var(--text-secondary); margin-bottom: 10px; }
+.auth-link { color: var(--accent); text-decoration: none; font-size: 13px; font-weight: 500; }
+.auth-link:hover { text-decoration: underline; }
+
+/* ─── Forgot password panel ─── */
+.forgot-panel {
+  display: none; background: var(--bg); border: 1px solid var(--border);
+  border-radius: var(--radius-sm); padding: 16px; margin-top: 16px;
+}
+.forgot-panel.open { display: block; animation: fadeUp 0.15s ease; }
+.forgot-panel-title {
+  font-size: 12px; font-weight: 700; color: var(--text-muted);
+  text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 12px;
+}
+
+/* ─── Step bar (register page) ─── */
+.step-bar { display: flex; align-items: center; gap: 6px; margin-bottom: 24px; }
+.step-item { display: flex; align-items: center; gap: 6px; font-size: 12px; font-weight: 600; color: var(--text-muted); }
+.step-item.active { color: var(--accent); }
+.step-item.done   { color: var(--green); }
+.step-dot {
+  width: 22px; height: 22px; border-radius: 50%; border: 2px solid currentColor;
+  display: flex; align-items: center; justify-content: center; font-size: 11px; flex-shrink: 0;
+}
+.step-item.done   .step-dot { background: var(--green); border-color: var(--green); color: white; }
+.step-item.active .step-dot { background: var(--accent-light); border-color: var(--accent); color: var(--accent); }
+.step-connector { flex: 1; height: 1px; background: var(--border); }
+.step-panel { display: none; }
+.step-panel.active { display: block; animation: fadeUp 0.15s ease; }
+
+/* ─── Alerts ─── */
+.alert {
+  padding: 10px 14px; border-radius: var(--radius-sm);
+  font-size: 13px; margin-bottom: 12px; display: none;
+}
+.alert.show { display: block; }
+.alert-error   { background: var(--red-light);   color: var(--red);   border: 1px solid var(--red-border); }
+.alert-success { background: var(--green-light); color: var(--green); border: 1px solid var(--green-border); }
+
+/* ─── Spinner ─── */
+.btn-spinner {
+  width: 14px; height: 14px; border: 2px solid rgba(255,255,255,0.4);
+  border-top-color: white; border-radius: 50%; animation: spin 0.6s linear infinite; display: none;
+}
+.btn-spinner.show { display: block; }
+@keyframes spin { to { transform: rotate(360deg); } }
+
+/* ─── OTP countdown ─── */
+.otp-hint { font-size: 12px; color: var(--text-muted); margin-top: 4px; }
+
+/* ─── Verified badge ─── */
+.verified-badge {
+  display: inline-flex; align-items: center; gap: 4px;
+  font-size: 12px; font-weight: 600; color: var(--green);
+  background: var(--green-light); border: 1px solid var(--green-border);
+  padding: 3px 10px; border-radius: 20px;
+}
+
+/* ─── Responsive ─── */
+@media (max-width: 480px) {
+  body { align-items: flex-start; padding-top: 32px; }
+  .auth-card { padding: 24px 18px; }
+}

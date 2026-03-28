@@ -1,3 +1,98 @@
+/* =============================================
+   STORAGE — embedded directly to avoid cache issues
+   ============================================= */
+(function() {
+  const API_BASE     = 'http://localhost:3001';
+  const STORAGE_KEY  = 'meetily_meetings';
+  const SETTINGS_KEY = 'meetily_settings';
+
+  function localGet() { try { return JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]'); } catch { return []; } }
+  function localSet(arr) { localStorage.setItem(STORAGE_KEY, JSON.stringify(arr)); }
+
+  async function apiCall(method, path, body) {
+    const token = localStorage.getItem('mm_token');
+    const opts = {
+      method,
+      headers: {
+        'Content-Type': 'application/json',
+        ...(token ? { Authorization: `Bearer ${token}` } : {}),
+      },
+    };
+    if (body) opts.body = JSON.stringify(body);
+    const r = await fetch(`${API_BASE}${path}`, opts);
+    const data = await r.json();
+    if (!r.ok) throw new Error(data.error || `HTTP ${r.status}`);
+    return data;
+  }
+
+  window.AppStorage = {
+    async getMeetings() {
+      const local = localGet();
+      this._bgSync();
+      return local;
+    },
+
+    _bgSyncTimer: null,
+    _bgSync() {
+      clearTimeout(this._bgSyncTimer);
+      this._bgSyncTimer = setTimeout(async () => {
+        try {
+          const r = await apiCall('GET', '/api/meetings');
+          if (Array.isArray(r.meetings) && r.meetings.length > 0) {
+            const local  = localGet();
+            const apiIds = new Set(r.meetings.map(m => m.id));
+            const merged = [...r.meetings, ...local.filter(m => !apiIds.has(m.id))];
+            localSet(merged);
+          }
+        } catch { /* server unreachable — ignore */ }
+      }, 200);
+    },
+
+    async saveMeeting(meeting) {
+      // Save locally first (instant, never fails)
+      const local = localGet();
+      const idx = local.findIndex(m => m.id === meeting.id);
+      if (idx >= 0) local[idx] = meeting; else local.unshift(meeting);
+      localSet(local);
+
+      // Sync to backend in background (don't await)
+      apiCall('POST', '/api/meetings', meeting)
+        .then(() => console.log('[AppStorage] Synced to backend:', meeting.id))
+        .catch(e => console.warn('[AppStorage] Backend sync failed (saved locally):', e.message));
+
+      return meeting;
+    },
+
+    getMeeting(id) { return localGet().find(m => m.id === id) || null; },
+
+    async updateMoM(id, mom) {
+      const local = localGet();
+      const m = local.find(m => m.id === id);
+      if (m) { m.mom = mom; localSet(local); }
+      try { await apiCall('PATCH', `/api/meetings/${id}/mom`, { mom }); } catch (e) {
+        console.warn('[AppStorage] updateMoM backend failed:', e.message);
+      }
+    },
+
+    async deleteMeeting(id) {
+      localSet(localGet().filter(m => m.id !== id));
+      try { await apiCall('DELETE', `/api/meetings/${id}`); } catch (e) {
+        console.warn('[AppStorage] deleteMeeting backend failed:', e.message);
+      }
+    },
+
+    clearAll() { localStorage.removeItem(STORAGE_KEY); },
+
+    getSettings()   { try { return JSON.parse(localStorage.getItem(SETTINGS_KEY) || '{}'); } catch { return {}; } },
+    saveSettings(s) { localStorage.setItem(SETTINGS_KEY, JSON.stringify(s)); },
+
+    generateId() {
+      return Date.now().toString(36) + Math.random().toString(36).slice(2, 6);
+    },
+  };
+
+  console.log('[AppStorage] Ready ✓');
+})();
 
 
 /* ---- Router ---- */
@@ -80,17 +175,22 @@ function formatDuration(s) {
 }
 
 /* ---- Dashboard ---- */
-function refreshDashboard() {
-  const stats = Storage.getStats();
+async function refreshDashboard() {
+  const meetings = await AppStorage.getMeetings();
+  const stats = {
+    count:        meetings.length,
+    totalWords:   meetings.reduce((a, m) => a + (m.wordCount   || 0), 0),
+    totalSeconds: meetings.reduce((a, m) => a + (m.durationSeconds || 0), 0),
+  };
   document.getElementById('statMeetings').textContent = stats.count;
   document.getElementById('statTime').textContent = formatDuration(stats.totalSeconds);
   document.getElementById('statWords').textContent = stats.totalWords.toLocaleString();
-  renderMeetingCards('recentMeetings', Storage.getMeetings().slice(0, 5));
+  renderMeetingCards('recentMeetings', meetings.slice(0, 5));
 }
 
 /* ---- Meetings list ---- */
-function refreshMeetingsList() {
-  renderMeetingCards('allMeetingsList', Storage.getMeetings());
+async function refreshMeetingsList() {
+  renderMeetingCards('allMeetingsList', await AppStorage.getMeetings());
 }
 
 function renderMeetingCards(containerId, meetings) {
@@ -207,53 +307,63 @@ function toggleRecording() {
   }
 }
 
-function saveMeeting() {
-  const segments = recordingData
-    ? recordingData.segments
-    : (recorder ? recorder.allSegments : []);
+async function saveMeeting() {
+  try {
+    const segments = recordingData
+      ? recordingData.segments
+      : (recorder ? recorder.allSegments : []);
 
-  if (!segments.length) {
-    showToast('Nothing recorded yet — speak something first');
-    return;
+    if (!segments.length) {
+      alert('Cannot save: Nothing recorded yet! Please press the microphone and speak something first.');
+      return;
+    }
+
+    const nameInput = document.getElementById('meetingName');
+    const name = nameInput.value.trim() || `Meeting — ${new Date().toLocaleDateString()}`;
+    const durationSeconds = recordingData ? recordingData.durationSeconds : 0;
+    const fullText = segments.map(s => s.text).join(' ');
+    const wordCount = fullText.split(/\s+/).filter(Boolean).length;
+
+    const meeting = {
+      id: typeof AppStorage !== 'undefined' ? AppStorage.generateId() : Date.now().toString(),
+      name,
+      createdAt: new Date().toISOString(),
+      durationSeconds,
+      wordCount,
+      transcript: fullText,
+      segments,
+      mom: null,
+    };
+
+    if (typeof AppStorage !== 'undefined') {
+      await AppStorage.saveMeeting(meeting);
+    } else {
+      throw new Error("AppStorage is broken or didn't load. Your browser is caching the old version!");
+    }
+
+    showToast(`Meeting "${name}" saved`);
+
+    // Reset
+    nameInput.value = '';
+    document.getElementById('transcriptBody').innerHTML = '<span class="placeholder-text">Your transcription will appear here as you speak…</span>';
+    document.getElementById('saveSection').style.display = 'none';
+    document.getElementById('recTimer').textContent = '00:00';
+    recordingData = null;
+    if (recorder) {
+      recorder.allSegments = [];
+      recorder._drawIdleLine();
+    }
+
+    openMeeting(meeting.id);
+  } catch (err) {
+    alert("AN ERROR OCCURRED WHILE SAVING: " + err.message + "\n\n" + err.stack);
+    console.error(err);
   }
-
-  const nameInput = document.getElementById('meetingName');
-  const name = nameInput.value.trim() || `Meeting — ${new Date().toLocaleDateString()}`;
-  const durationSeconds = recordingData ? recordingData.durationSeconds : 0;
-  const fullText = segments.map(s => s.text).join(' ');
-  const wordCount = fullText.split(/\s+/).filter(Boolean).length;
-
-  const meeting = {
-    id: Storage.generateId(),
-    name,
-    createdAt: new Date().toISOString(),
-    durationSeconds,
-    wordCount,
-    transcript: fullText,
-    segments,
-    mom: null,
-  };
-
-  Storage.saveMeeting(meeting);
-  showToast(`Meeting "${name}" saved`);
-
-  // Reset
-  nameInput.value = '';
-  document.getElementById('transcriptBody').innerHTML = '<span class="placeholder-text">Your transcription will appear here as you speak…</span>';
-  document.getElementById('saveSection').style.display = 'none';
-  document.getElementById('recTimer').textContent = '00:00';
-  recordingData = null;
-  if (recorder) {
-    recorder.allSegments = [];
-    recorder._drawIdleLine();
-  }
-
-  openMeeting(meeting.id);
 }
 
 /* ---- Meeting Detail ---- */
 function openMeeting(id) {
-  const m = Storage.getMeeting(id);
+  const m = AppStorage.getMeeting(id);
   if (!m) return;
   currentMeetingId = id;
 
@@ -295,7 +405,7 @@ function showTab(name) {
  * @param {string} id - meeting id
  */
 async function generateMoM(id) {
-  const m = Storage.getMeeting(id || currentMeetingId);
+  const m = AppStorage.getMeeting(id || currentMeetingId);
   if (!m) return;
   if (!m.transcript || m.transcript.trim().length < 20) {
     document.getElementById('detailMom').innerHTML =
@@ -306,9 +416,9 @@ async function generateMoM(id) {
   const momEl = document.getElementById('detailMom');
   if (momEl) momEl.innerHTML = `<div class="loading-wrap"><div class="spinner"></div><span>Generating minutes…</span></div>`;
 
-  const settings = Storage.getSettings();
+  const settings = AppStorage.getSettings();
   const mom = buildMoM(m, settings);
-  Storage.updateMoM(m.id, mom);
+  AppStorage.updateMoM(m.id, mom);
 
   // If we're currently viewing this meeting, refresh the panel
   if (currentMeetingId === m.id && momEl) {
@@ -505,7 +615,7 @@ function renderMoM(mom) {
 
 /* ---- Download MoM as PDF on Letterhead (jsPDF) ---- */
 async function downloadMomAsImage(id) {
-  const m = Storage.getMeeting(id || currentMeetingId);
+  const m = AppStorage.getMeeting(id || currentMeetingId);
   if (!m || !m.mom) {
     showToast('No minutes to download — generate them first');
     return;
@@ -535,7 +645,7 @@ async function downloadMomAsImage(id) {
 
     // ---- Page helper: draw letterhead background ----
     function addLetterheadBg() {
-      pdf.addImage(lhSrc, 'PNG', 0, 0, pageW, pageH);
+      pdf.addImage(lhSrc, 'JPEG', 0, 0, pageW, pageH);
     }
 
     // ---- Text helper: add text with page-break support ----
@@ -561,8 +671,8 @@ async function downloadMomAsImage(id) {
     // ---- Draw first page ----
     addLetterheadBg();
 
-    // Start content below the RAIT header (~50mm from top, clear of logo)
-    let y = 52;
+    // Start content below the RAIT header (~38mm gives clearance below the logo+address block)
+    let y = 38;
 
     // Separator line
     pdf.setDrawColor(139, 0, 0);
@@ -677,7 +787,7 @@ async function downloadMomAsImage(id) {
   } finally {
     if (btn) {
       btn.disabled = false;
-      btn.innerHTML = '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="vertical-align:-2px;margin-right:4px"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>Download Letterhead';
+      btn.innerHTML = '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="vertical-align:-2px;margin-right:4px"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>Download MoM';
     }
   }
 }
@@ -685,7 +795,7 @@ async function downloadMomAsImage(id) {
 
 /* ---- Settings ---- */
 function loadSettings() {
-  const s = Storage.getSettings();
+  const s = AppStorage.getSettings();
   const organiserEl = document.getElementById('momOrganiser');
   const locationEl  = document.getElementById('momLocation');
   if (organiserEl) organiserEl.value = s.momOrganiser || '';
@@ -703,7 +813,7 @@ function loadSettings() {
 }
 
 function saveSettings() {
-  Storage.saveSettings({
+  AppStorage.saveSettings({
     momOrganiser: (document.getElementById('momOrganiser').value || '').trim(),
     momLocation:  (document.getElementById('momLocation').value  || '').trim(),
   });
@@ -727,8 +837,33 @@ function initTheme() {
 }
 
 /* ---- Boot ---- */
-document.addEventListener('DOMContentLoaded', () => {
+document.addEventListener('DOMContentLoaded', async () => {
   initTheme();
+
+  // ── Load user info from auth ──────────────────────────────────────
+  const username = AuthAPI.getUsername();
+  const nameLabel = document.getElementById('userNameLabel');
+  const avatar    = document.getElementById('userAvatar');
+  if (nameLabel) nameLabel.textContent = username;
+  if (avatar)    avatar.textContent    = (username[0] || 'U').toUpperCase();
+
+  // Validate token with server (non-blocking)
+  AuthAPI.checkAuth().then(user => {
+    if (!user) return; // redirected to auth.html inside checkAuth
+    if (user.username && nameLabel) {
+      nameLabel.textContent = user.username;
+      if (avatar) avatar.textContent = user.username[0].toUpperCase();
+      localStorage.setItem('mm_username', user.username);
+    }
+  });
+
+  // ── Logout ────────────────────────────────────────────────────────
+  const logoutBtn = document.getElementById('btnLogout');
+  if (logoutBtn) logoutBtn.addEventListener('click', () => {
+    showConfirm('Log Out', 'Are you sure you want to log out?', () => AuthAPI.logout());
+  });
+
+  // ── Theme ──────────────────────────────────────────────────────────
   document.getElementById('themeToggle').addEventListener('click', () => {
     const isDark = document.documentElement.getAttribute('data-theme') === 'dark';
     applyTheme(!isDark);
@@ -764,7 +899,7 @@ document.addEventListener('DOMContentLoaded', () => {
   document.getElementById('btnBack').addEventListener('click', () => showView('meetings'));
   document.getElementById('btnDeleteDetail').addEventListener('click', () =>
     showConfirm('Delete Meeting', 'This will permanently delete the meeting and its transcript.', () => {
-      Storage.deleteMeeting(currentMeetingId);
+      AppStorage.deleteMeeting(currentMeetingId);
       showToast('Meeting deleted');
       showView('meetings');
     }));
@@ -780,7 +915,7 @@ document.addEventListener('DOMContentLoaded', () => {
   document.getElementById('btnSaveSettings').addEventListener('click', saveSettings);
   document.getElementById('btnClearAll').addEventListener('click', () =>
     showConfirm('Clear All Meetings', 'This will permanently delete ALL your meetings and cannot be undone.', () => {
-      Storage.clearAll();
+      AppStorage.clearAll();
       showToast('All meetings cleared');
       refreshDashboard();
     }));

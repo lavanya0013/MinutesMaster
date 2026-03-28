@@ -1,0 +1,272 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Login — MinutesMaster</title>
+  <meta name="description" content="Sign in to MinutesMaster" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="auth.css" />
+</head>
+<body>
+
+<div class="auth-card">
+
+  <!-- Logo -->
+  <div class="auth-logo">
+    <div class="auth-logo-icon">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+        <path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3Z"/>
+        <path d="M19 10v2a7 7 0 0 1-14 0v-2"/>
+        <line x1="12" y1="19" x2="12" y2="22"/>
+        <line x1="8"  y1="22" x2="16" y2="22"/>
+      </svg>
+    </div>
+    <span class="auth-logo-text">MinutesMaster</span>
+  </div>
+
+  <!-- Alerts -->
+  <div class="alert alert-error"   id="loginError"></div>
+  <div class="alert alert-success" id="loginSuccess"></div>
+
+  <!-- Login form -->
+  <h1 class="auth-title">Welcome back</h1>
+  <p class="auth-sub">Sign in to your account to continue.</p>
+
+  <form id="loginForm" autocomplete="on" novalidate>
+    <div class="field-group">
+      <label class="field-label" for="loginUsername">Username</label>
+      <input class="field-input" type="text" id="loginUsername"
+             placeholder="Enter your username" autocomplete="username" />
+    </div>
+
+    <div class="field-group">
+      <label class="field-label" for="loginPassword">Password</label>
+      <div class="pw-wrap">
+        <input class="field-input" type="password" id="loginPassword"
+               placeholder="Enter your password" autocomplete="current-password" />
+        <button type="button" class="pw-toggle" id="togglePwd" aria-label="Show/hide password" tabindex="-1">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
+            <circle cx="12" cy="12" r="3"/>
+          </svg>
+        </button>
+      </div>
+    </div>
+
+    <div style="text-align:right; margin:-4px 0 16px;">
+      <a href="#" class="auth-link" id="forgotLink">Forgot password?</a>
+    </div>
+
+    <button type="submit" class="btn-primary" id="loginBtn">
+      <div class="btn-spinner" id="loginSpinner"></div>
+      Sign In
+    </button>
+  </form>
+
+  <!-- Forgot password panel (toggles) -->
+  <div class="forgot-panel" id="forgotPanel">
+    <div class="forgot-panel-title">Reset Password</div>
+
+    <!-- Step A: Send OTP to email -->
+    <div id="fpStepA">
+      <div class="field-group">
+        <label class="field-label" for="fpEmail">Registered Email Address</label>
+        <div class="otp-row">
+          <input class="field-input" type="email" id="fpEmail"
+                 placeholder="your@email.com" />
+          <button type="button" class="btn-secondary" id="fpSendBtn">Send OTP</button>
+        </div>
+        <div class="otp-hint" id="fpCountdown" style="display:none;"></div>
+      </div>
+    </div>
+
+    <!-- Step B: Enter OTP + new password (shown after OTP sent) -->
+    <div id="fpStepB" style="display:none;">
+      <div class="field-group">
+        <label class="field-label" for="fpOtp">Enter OTP received in your email</label>
+        <input class="field-input" type="text" id="fpOtp"
+               placeholder="6-digit OTP" maxlength="6" inputmode="numeric" />
+      </div>
+      <div class="field-group">
+        <label class="field-label" for="fpNewPwd">New Password</label>
+        <div class="pw-wrap">
+          <input class="field-input" type="password" id="fpNewPwd" placeholder="At least 6 characters" />
+          <button type="button" class="pw-toggle" id="toggleFpPwd" tabindex="-1" aria-label="Show/hide">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/>
+            </svg>
+          </button>
+        </div>
+      </div>
+      <button type="button" class="btn-primary" id="fpResetBtn" style="margin-top:6px;">
+        <div class="btn-spinner" id="fpSpinner"></div>
+        Reset Password
+      </button>
+      <p style="margin-top:8px;">
+        <a href="#" class="auth-link" id="fpBack" style="font-size:12px;">← Use a different number</a>
+      </p>
+    </div>
+
+    <div class="alert alert-error"   id="fpError"   style="margin-top:10px;"></div>
+    <div class="alert alert-success" id="fpSuccess" style="margin-top:10px;"></div>
+  </div>
+
+  <!-- Divider + Register -->
+  <hr class="auth-divider" />
+  <div class="auth-footer">
+    <p class="auth-footer-text">New user?</p>
+    <a href="register.html" class="btn-outline" id="goRegister">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/>
+        <circle cx="9" cy="7" r="4"/>
+        <line x1="19" y1="8" x2="19" y2="14"/>
+        <line x1="22" y1="11" x2="16" y2="11"/>
+      </svg>
+      Register
+    </a>
+  </div>
+
+</div><!-- /auth-card -->
+
+<script src="auth.js"></script>
+<script>
+/* ── Theme (apply before paint) ── */
+(function () {
+  const t = localStorage.getItem('mm_theme');
+  if (t === 'dark') document.documentElement.setAttribute('data-theme', 'dark');
+})();
+
+/* ── Already logged in? ── */
+(function () {
+  if (localStorage.getItem('mm_token')) window.location.href = 'index.html';
+  const msg = sessionStorage.getItem('auth_msg');
+  if (msg) {
+    showEl('loginSuccess', msg);
+    sessionStorage.removeItem('auth_msg');
+  }
+})();
+
+/* ── Helpers ── */
+function showEl(id, text) {
+  const el = document.getElementById(id);
+  el.textContent = text; el.classList.add('show');
+}
+function hideEl(id) { document.getElementById(id).classList.remove('show'); }
+function countdown(elId, secs, done) {
+  const el = document.getElementById(elId);
+  el.style.display = 'block';
+  let r = secs;
+  (function tick() {
+    el.textContent = `Resend available in ${r}s`;
+    if (r-- <= 0) { el.style.display = 'none'; if (done) done(); return; }
+    setTimeout(tick, 1000);
+  })();
+}
+
+/* ── Password toggle ── */
+document.getElementById('togglePwd').onclick = () => {
+  const i = document.getElementById('loginPassword');
+  i.type = i.type === 'password' ? 'text' : 'password';
+};
+document.getElementById('toggleFpPwd').onclick = () => {
+  const i = document.getElementById('fpNewPwd');
+  i.type = i.type === 'password' ? 'text' : 'password';
+};
+
+/* ── Login form ── */
+document.getElementById('loginForm').addEventListener('submit', async e => {
+  e.preventDefault();
+  hideEl('loginError'); hideEl('loginSuccess');
+  const username = document.getElementById('loginUsername').value.trim();
+  const password = document.getElementById('loginPassword').value;
+  if (!username || !password) { showEl('loginError', 'Please fill in all fields.'); return; }
+
+  const btn = document.getElementById('loginBtn');
+  const sp  = document.getElementById('loginSpinner');
+  btn.disabled = true; sp.classList.add('show');
+
+  try {
+    const r = await AuthAPI.login(username, password);
+    if (r.error) { showEl('loginError', r.error); }
+    else {
+      localStorage.setItem('mm_token',    r.token);
+      localStorage.setItem('mm_username', r.username);
+      window.location.href = 'index.html';
+    }
+  } catch {
+    showEl('loginError', 'Cannot connect to server. Make sure the server is running (node server.js).');
+  } finally {
+    btn.disabled = false; sp.classList.remove('show');
+  }
+});
+
+/* ── Forgot password toggle ── */
+document.getElementById('forgotLink').addEventListener('click', e => {
+  e.preventDefault();
+  document.getElementById('forgotPanel').classList.toggle('open');
+});
+
+/* ── Forgot: Send OTP ── */
+document.getElementById('fpSendBtn').addEventListener('click', async () => {
+  const email  = document.getElementById('fpEmail').value.trim();
+  const btn    = document.getElementById('fpSendBtn');
+  hideEl('fpError'); hideEl('fpSuccess');
+
+  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+    showEl('fpError', 'Enter a valid email address.'); return;
+  }
+  btn.disabled = true; btn.textContent = 'Sending…';
+  try {
+    const r = await AuthAPI.forgotSendOTP(email);
+    if (r.error) { showEl('fpError', r.error); btn.disabled = false; btn.textContent = 'Send OTP'; }
+    else {
+      showEl('fpSuccess', 'OTP sent! Check your email inbox (and spam folder).');
+      document.getElementById('fpStepB').style.display = 'block';
+      countdown('fpCountdown', 60, () => { btn.disabled = false; btn.textContent = 'Resend OTP'; });
+    }
+  } catch {
+    showEl('fpError', 'Cannot connect to server.');
+    btn.disabled = false; btn.textContent = 'Send OTP';
+  }
+});
+
+/* ── Forgot: Reset password ── */
+document.getElementById('fpResetBtn').addEventListener('click', async () => {
+  const email  = document.getElementById('fpEmail').value.trim();
+  const otp    = document.getElementById('fpOtp').value.trim();
+  const newPwd = document.getElementById('fpNewPwd').value;
+  const btn    = document.getElementById('fpResetBtn');
+  const sp     = document.getElementById('fpSpinner');
+  hideEl('fpError'); hideEl('fpSuccess');
+
+  if (otp.length !== 6)  { showEl('fpError', 'Enter the 6-digit OTP.'); return; }
+  if (newPwd.length < 6) { showEl('fpError', 'Password must be at least 6 characters.'); return; }
+
+  btn.disabled = true; sp.classList.add('show');
+  try {
+    const r = await AuthAPI.forgotReset(email, otp, newPwd);
+    if (r.error) { showEl('fpError', r.error); }
+    else {
+      showEl('fpSuccess', 'Password reset! You can now log in with your new password.');
+      document.getElementById('fpStepB').style.display = 'none';
+      document.getElementById('fpEmail').value = '';
+    }
+  } catch {
+    showEl('fpError', 'Cannot connect to server.');
+  } finally {
+    btn.disabled = false; sp.classList.remove('show');
+  }
+});
+
+document.getElementById('fpBack').addEventListener('click', e => {
+  e.preventDefault();
+  document.getElementById('fpStepB').style.display = 'none';
+  document.getElementById('fpEmail').value = '';
+  hideEl('fpError'); hideEl('fpSuccess');
+});
+</script>
+</body>
+</html>
