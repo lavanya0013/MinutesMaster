@@ -3,123 +3,163 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Register — MinutesMaster</title>
+  <title>Create Account — MinutesMaster</title>
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="auth.css" />
 </head>
 <body>
+
 <div class="auth-card">
 
-  <!-- Logo -->
-  <div class="auth-logo">
-    <div class="auth-logo-icon">
-      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
-        <path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3Z"/>
-        <path d="M19 10v2a7 7 0 0 1-14 0v-2"/>
-        <line x1="12" y1="19" x2="12" y2="22"/>
-        <line x1="8"  y1="22" x2="16" y2="22"/>
-      </svg>
-    </div>
-    <span class="auth-logo-text">MinutesMaster</span>
-  </div>
-
-  <h1 class="auth-title">Create account</h1>
-  <p class="auth-sub">Verify your email to get started.</p>
-
-  <!-- Step bar -->
-  <div class="step-bar">
-    <div class="step-item active" id="si1">
-      <div class="step-dot">1</div>Verify Email
-    </div>
-    <div class="step-connector"></div>
-    <div class="step-item" id="si2">
-      <div class="step-dot">2</div>Create Account
-    </div>
-  </div>
-
-  <div class="alert alert-error"   id="regError"></div>
-  <div class="alert alert-success" id="regSuccess"></div>
-
-  <!-- ── STEP 1: Email + OTP ── -->
-  <div class="step-panel active" id="panelStep1">
-    <div class="field-group">
-      <label class="field-label" for="regEmail">Email Address</label>
-      <div class="otp-row">
-        <input class="field-input" type="email" id="regEmail"
-               placeholder="you@example.com" autocomplete="email" />
-        <button type="button" class="btn-secondary" id="sendOtpBtn">Send OTP</button>
-      </div>
-      <div class="otp-hint" id="otpCountdown" style="display:none;"></div>
-    </div>
-
-    <div id="otpInputArea" style="display:none;">
-      <div class="field-group">
-        <label class="field-label" for="regOtp">
-          Enter OTP
-          <span style="font-weight:400;color:var(--text-secondary);"> (check your inbox)</span>
-        </label>
-        <input class="field-input" type="text" id="regOtp"
-               placeholder="6-digit OTP" maxlength="6" inputmode="numeric" />
-      </div>
-      <button type="button" class="btn-primary" id="verifyOtpBtn">
-        <div class="btn-spinner" id="verifySpinner"></div>
-        Verify Email
-      </button>
-    </div>
-  </div>
-
-  <!-- ── STEP 2: Username + Phone + Password ── -->
-  <div class="step-panel" id="panelStep2">
-    <div style="margin-bottom:14px;">
-      <span class="verified-badge">
-        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3">
-          <polyline points="20 6 9 17 4 12"/>
+  <!-- ══ LEFT PANEL — Branding ══ -->
+  <div class="auth-left">
+    <div class="auth-left-logo">
+      <div class="auth-left-logo-icon">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+          <path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3Z"/>
+          <path d="M19 10v2a7 7 0 0 1-14 0v-2"/>
+          <line x1="12" y1="19" x2="12" y2="22"/>
+          <line x1="8"  y1="22" x2="16" y2="22"/>
         </svg>
-        Email verified
-      </span>
+      </div>
+      <span class="auth-left-logo-text">MinutesMaster</span>
     </div>
 
-    <div class="field-group">
-      <label class="field-label" for="regUsername">Create Username</label>
-      <input class="field-input" type="text" id="regUsername"
-             placeholder="3–20 chars (letters, numbers, _)" autocomplete="username" />
+    <div class="auth-left-body">
+      <h2 class="auth-left-headline">Start capturing<br/>smarter meetings.</h2>
+      <p class="auth-left-sub">Join MinutesMaster and never miss a decision or action item again.</p>
+      <div class="auth-features">
+        <div class="auth-feature-item">
+          <div class="auth-feature-dot">✓</div>
+          Free to use — no credit card needed
+        </div>
+        <div class="auth-feature-item">
+          <div class="auth-feature-dot">✓</div>
+          Works in Chrome &amp; Edge instantly
+        </div>
+        <div class="auth-feature-item">
+          <div class="auth-feature-dot">✓</div>
+          Download polished MoM as PDF
+        </div>
+      </div>
     </div>
 
-    <div class="field-group">
-      <label class="field-label" for="regPhone">Mobile Number <span style="font-weight:400;color:var(--text-muted);">(optional)</span></label>
-      <input class="field-input" type="tel" id="regPhone"
-             placeholder="10-digit mobile number" maxlength="10" inputmode="numeric" />
+  </div>
+
+  <!-- ══ RIGHT PANEL — Form ══ -->
+  <div class="auth-right">
+
+    <!-- Mobile-only logo -->
+    <div class="auth-logo">
+      <div class="auth-logo-icon">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+          <path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3Z"/>
+          <path d="M19 10v2a7 7 0 0 1-14 0v-2"/>
+          <line x1="12" y1="19" x2="12" y2="22"/>
+          <line x1="8"  y1="22" x2="16" y2="22"/>
+        </svg>
+      </div>
+      <span class="auth-logo-text">MinutesMaster</span>
     </div>
 
-    <div class="field-group">
-      <label class="field-label" for="regPassword">Create Password</label>
-      <div class="pw-wrap">
-        <input class="field-input" type="password" id="regPassword"
-               placeholder="At least 6 characters" autocomplete="new-password" />
-        <button type="button" class="pw-toggle" id="toggleRegPwd" tabindex="-1" aria-label="Show/hide">
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-            <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/>
-          </svg>
+    <h1 class="auth-title">Create account</h1>
+    <p class="auth-sub">Verify your email to get started.</p>
+
+    <!-- Step bar -->
+    <div class="step-bar">
+      <div class="step-item active" id="si1">
+        <div class="step-dot">1</div>Verify Email
+      </div>
+      <div class="step-connector"></div>
+      <div class="step-item" id="si2">
+        <div class="step-dot">2</div>Create Account
+      </div>
+    </div>
+
+    <div class="alert alert-error"   id="regError"></div>
+    <div class="alert alert-success" id="regSuccess"></div>
+
+    <!-- ── STEP 1: Email + OTP ── -->
+    <div class="step-panel active" id="panelStep1">
+      <div class="field-group">
+        <label class="field-label" for="regEmail">Email Address</label>
+        <div class="otp-row">
+          <input class="field-input" type="email" id="regEmail" placeholder="you@example.com" autocomplete="email" />
+          <button type="button" class="btn-secondary" id="sendOtpBtn">Send OTP</button>
+        </div>
+        <div class="otp-hint" id="otpCountdown" style="display:none;"></div>
+      </div>
+
+      <div id="otpInputArea" style="display:none;">
+        <div class="field-group">
+          <label class="field-label" for="regOtp">
+            Enter OTP <span style="font-weight:400; color:var(--text-3); text-transform:none; letter-spacing:0;">(check your inbox)</span>
+          </label>
+          <input class="field-input" type="text" id="regOtp" placeholder="6-digit OTP" maxlength="6" inputmode="numeric" />
+        </div>
+        <button type="button" class="btn-primary" id="verifyOtpBtn">
+          <div class="btn-spinner" id="verifySpinner"></div>
+          Verify Email
         </button>
       </div>
-      <div class="otp-hint" id="pwStrength"></div>
     </div>
 
-    <button type="button" class="btn-primary" id="registerBtn" style="margin-top:6px;">
-      <div class="btn-spinner" id="registerSpinner"></div>
-      Create Account
-    </button>
-  </div>
+    <!-- ── STEP 2: Details ── -->
+    <div class="step-panel" id="panelStep2">
+      <div style="margin-bottom:16px;">
+        <span class="verified-badge">
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3">
+            <polyline points="20 6 9 17 4 12"/>
+          </svg>
+          Email verified
+        </span>
+      </div>
 
-  <hr class="auth-divider" />
-  <div class="auth-footer">
-    <p class="auth-footer-text">Already have an account?</p>
-    <a href="auth.html" class="btn-outline">Sign In</a>
-  </div>
+      <div class="field-group">
+        <label class="field-label" for="regUsername">Username</label>
+        <input class="field-input" type="text" id="regUsername"
+               placeholder="3–20 chars (letters, numbers, _)" autocomplete="username" />
+      </div>
 
-</div>
+      <div class="field-group">
+        <label class="field-label" for="regPhone">
+          Mobile Number
+          <span style="font-weight:400; color:var(--text-3); text-transform:none; letter-spacing:0;">(optional)</span>
+        </label>
+        <input class="field-input" type="tel" id="regPhone"
+               placeholder="10-digit mobile number" maxlength="10" inputmode="numeric" />
+      </div>
+
+      <div class="field-group">
+        <label class="field-label" for="regPassword">Create Password</label>
+        <div class="pw-wrap">
+          <input class="field-input" type="password" id="regPassword"
+                 placeholder="At least 6 characters" autocomplete="new-password" />
+          <button type="button" class="pw-toggle" id="toggleRegPwd" tabindex="-1" aria-label="Show/hide">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/>
+            </svg>
+          </button>
+        </div>
+        <div class="otp-hint" id="pwStrength"></div>
+      </div>
+
+      <button type="button" class="btn-primary" id="registerBtn" style="margin-top:6px;">
+        <div class="btn-spinner" id="registerSpinner"></div>
+        Create Account
+      </button>
+    </div>
+
+    <hr class="auth-divider" />
+    <div class="auth-footer">
+      <p class="auth-footer-text">Already have an account?</p>
+      <a href="auth.html" class="btn-outline">Sign In</a>
+    </div>
+
+  </div><!-- /auth-right -->
+</div><!-- /auth-card -->
 
 <script src="auth.js"></script>
 <script>
@@ -195,9 +235,10 @@ document.getElementById('regPassword').addEventListener('input', function () {
   const v = this.value;
   if (!v) { el.textContent = ''; return; }
   if (v.length < 6)  { el.textContent = 'Too short (min 6 characters)'; el.style.color = 'var(--red)'; }
-  else if (v.length < 10) { el.textContent = 'Moderate'; el.style.color = 'var(--text-muted)'; }
+  else if (v.length < 10) { el.textContent = 'Moderate strength'; el.style.color = 'var(--text-3)'; }
   else { el.textContent = '✓ Strong password'; el.style.color = 'var(--green)'; }
 });
+
 document.getElementById('toggleRegPwd').onclick = () => {
   const i = document.getElementById('regPassword');
   i.type = i.type === 'password' ? 'text' : 'password';

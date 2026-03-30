@@ -4,136 +4,174 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Login — MinutesMaster</title>
-  <meta name="description" content="Sign in to MinutesMaster" />
+  <meta name="description" content="Sign in to MinutesMaster — AI-powered meeting transcription" />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="auth.css" />
 </head>
 <body>
 
 <div class="auth-card">
 
-  <!-- Logo -->
-  <div class="auth-logo">
-    <div class="auth-logo-icon">
-      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
-        <path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3Z"/>
-        <path d="M19 10v2a7 7 0 0 1-14 0v-2"/>
-        <line x1="12" y1="19" x2="12" y2="22"/>
-        <line x1="8"  y1="22" x2="16" y2="22"/>
-      </svg>
+  <!-- ══ LEFT PANEL — Branding ══ -->
+  <div class="auth-left">
+    <div class="auth-left-logo">
+      <div class="auth-left-logo-icon">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+          <path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3Z"/>
+          <path d="M19 10v2a7 7 0 0 1-14 0v-2"/>
+          <line x1="12" y1="19" x2="12" y2="22"/>
+          <line x1="8"  y1="22" x2="16" y2="22"/>
+        </svg>
+      </div>
+      <span class="auth-left-logo-text">MinutesMaster</span>
     </div>
-    <span class="auth-logo-text">MinutesMaster</span>
+
+    <div class="auth-left-body">
+      <h2 class="auth-left-headline">Your meetings,<br/>captured perfectly.</h2>
+      <p class="auth-left-sub">AI-powered transcription and meeting minutes — right in your browser.</p>
+      <div class="auth-features">
+        <div class="auth-feature-item">
+          <div class="auth-feature-dot">✓</div>
+          Live transcription as you speak
+        </div>
+        <div class="auth-feature-item">
+          <div class="auth-feature-dot">✓</div>
+          Auto-generated Minutes of Meeting
+        </div>
+        <div class="auth-feature-item">
+          <div class="auth-feature-dot">✓</div>
+          Private — no data leaves your browser
+        </div>
+      </div>
+    </div>
+
   </div>
 
-  <!-- Alerts -->
-  <div class="alert alert-error"   id="loginError"></div>
-  <div class="alert alert-success" id="loginSuccess"></div>
+  <!-- ══ RIGHT PANEL — Form ══ -->
+  <div class="auth-right">
 
-  <!-- Login form -->
-  <h1 class="auth-title">Welcome back</h1>
-  <p class="auth-sub">Sign in to your account to continue.</p>
-
-  <form id="loginForm" autocomplete="on" novalidate>
-    <div class="field-group">
-      <label class="field-label" for="loginUsername">Username</label>
-      <input class="field-input" type="text" id="loginUsername"
-             placeholder="Enter your username" autocomplete="username" />
-    </div>
-
-    <div class="field-group">
-      <label class="field-label" for="loginPassword">Password</label>
-      <div class="pw-wrap">
-        <input class="field-input" type="password" id="loginPassword"
-               placeholder="Enter your password" autocomplete="current-password" />
-        <button type="button" class="pw-toggle" id="togglePwd" aria-label="Show/hide password" tabindex="-1">
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-            <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
-            <circle cx="12" cy="12" r="3"/>
-          </svg>
-        </button>
+    <!-- Mobile-only logo -->
+    <div class="auth-logo">
+      <div class="auth-logo-icon">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+          <path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3Z"/>
+          <path d="M19 10v2a7 7 0 0 1-14 0v-2"/>
+          <line x1="12" y1="19" x2="12" y2="22"/>
+          <line x1="8"  y1="22" x2="16" y2="22"/>
+        </svg>
       </div>
+      <span class="auth-logo-text">MinutesMaster</span>
     </div>
 
-    <div style="text-align:right; margin:-4px 0 16px;">
-      <a href="#" class="auth-link" id="forgotLink">Forgot password?</a>
-    </div>
+    <!-- Alerts -->
+    <div class="alert alert-error"   id="loginError"></div>
+    <div class="alert alert-success" id="loginSuccess"></div>
 
-    <button type="submit" class="btn-primary" id="loginBtn">
-      <div class="btn-spinner" id="loginSpinner"></div>
-      Sign In
-    </button>
-  </form>
+    <!-- Title -->
+    <h1 class="auth-title">Welcome back</h1>
+    <p class="auth-sub">Sign in to your account to continue.</p>
 
-  <!-- Forgot password panel (toggles) -->
-  <div class="forgot-panel" id="forgotPanel">
-    <div class="forgot-panel-title">Reset Password</div>
-
-    <!-- Step A: Send OTP to email -->
-    <div id="fpStepA">
+    <!-- Login form -->
+    <form id="loginForm" autocomplete="on" novalidate>
       <div class="field-group">
-        <label class="field-label" for="fpEmail">Registered Email Address</label>
-        <div class="otp-row">
-          <input class="field-input" type="email" id="fpEmail"
-                 placeholder="your@email.com" />
-          <button type="button" class="btn-secondary" id="fpSendBtn">Send OTP</button>
-        </div>
-        <div class="otp-hint" id="fpCountdown" style="display:none;"></div>
+        <label class="field-label" for="loginUsername">Username</label>
+        <input class="field-input" type="text" id="loginUsername"
+               placeholder="Enter your username" autocomplete="username" />
       </div>
-    </div>
 
-    <!-- Step B: Enter OTP + new password (shown after OTP sent) -->
-    <div id="fpStepB" style="display:none;">
       <div class="field-group">
-        <label class="field-label" for="fpOtp">Enter OTP received in your email</label>
-        <input class="field-input" type="text" id="fpOtp"
-               placeholder="6-digit OTP" maxlength="6" inputmode="numeric" />
-      </div>
-      <div class="field-group">
-        <label class="field-label" for="fpNewPwd">New Password</label>
+        <label class="field-label" for="loginPassword">Password</label>
         <div class="pw-wrap">
-          <input class="field-input" type="password" id="fpNewPwd" placeholder="At least 6 characters" />
-          <button type="button" class="pw-toggle" id="toggleFpPwd" tabindex="-1" aria-label="Show/hide">
+          <input class="field-input" type="password" id="loginPassword"
+                 placeholder="Enter your password" autocomplete="current-password" />
+          <button type="button" class="pw-toggle" id="togglePwd" aria-label="Show/hide password" tabindex="-1">
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-              <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/>
+              <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
+              <circle cx="12" cy="12" r="3"/>
             </svg>
           </button>
         </div>
       </div>
-      <button type="button" class="btn-primary" id="fpResetBtn" style="margin-top:6px;">
-        <div class="btn-spinner" id="fpSpinner"></div>
-        Reset Password
+
+      <div style="text-align:right; margin:-4px 0 18px;">
+        <a href="#" class="auth-link" id="forgotLink">Forgot password?</a>
+      </div>
+
+      <button type="submit" class="btn-primary" id="loginBtn">
+        <div class="btn-spinner" id="loginSpinner"></div>
+        Sign In
       </button>
-      <p style="margin-top:8px;">
-        <a href="#" class="auth-link" id="fpBack" style="font-size:12px;">← Use a different number</a>
-      </p>
+    </form>
+
+    <!-- Forgot password panel -->
+    <div class="forgot-panel" id="forgotPanel">
+      <div class="forgot-panel-title">Reset Password</div>
+
+      <!-- Step A: Send OTP -->
+      <div id="fpStepA">
+        <div class="field-group">
+          <label class="field-label" for="fpEmail">Registered Email Address</label>
+          <div class="otp-row">
+            <input class="field-input" type="email" id="fpEmail" placeholder="your@email.com" />
+            <button type="button" class="btn-secondary" id="fpSendBtn">Send OTP</button>
+          </div>
+          <div class="otp-hint" id="fpCountdown" style="display:none;"></div>
+        </div>
+      </div>
+
+      <!-- Step B: OTP + new password -->
+      <div id="fpStepB" style="display:none;">
+        <div class="field-group">
+          <label class="field-label" for="fpOtp">Enter OTP from your email</label>
+          <input class="field-input" type="text" id="fpOtp" placeholder="6-digit OTP" maxlength="6" inputmode="numeric" />
+        </div>
+        <div class="field-group">
+          <label class="field-label" for="fpNewPwd">New Password</label>
+          <div class="pw-wrap">
+            <input class="field-input" type="password" id="fpNewPwd" placeholder="At least 6 characters" />
+            <button type="button" class="pw-toggle" id="toggleFpPwd" tabindex="-1" aria-label="Show/hide">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/>
+              </svg>
+            </button>
+          </div>
+        </div>
+        <button type="button" class="btn-primary" id="fpResetBtn" style="margin-top:4px;">
+          <div class="btn-spinner" id="fpSpinner"></div>
+          Reset Password
+        </button>
+        <p style="margin-top:10px;">
+          <a href="#" class="auth-link" id="fpBack" style="font-size:12px;">← Use a different email</a>
+        </p>
+      </div>
+
+      <div class="alert alert-error"   id="fpError"   style="margin-top:12px;"></div>
+      <div class="alert alert-success" id="fpSuccess" style="margin-top:12px;"></div>
     </div>
 
-    <div class="alert alert-error"   id="fpError"   style="margin-top:10px;"></div>
-    <div class="alert alert-success" id="fpSuccess" style="margin-top:10px;"></div>
-  </div>
+    <!-- Divider + Register -->
+    <hr class="auth-divider" />
+    <div class="auth-footer">
+      <p class="auth-footer-text">Don't have an account yet?</p>
+      <a href="register.html" class="btn-outline" id="goRegister">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/>
+          <circle cx="9" cy="7" r="4"/>
+          <line x1="19" y1="8" x2="19" y2="14"/>
+          <line x1="22" y1="11" x2="16" y2="11"/>
+        </svg>
+        Create Account
+      </a>
+    </div>
 
-  <!-- Divider + Register -->
-  <hr class="auth-divider" />
-  <div class="auth-footer">
-    <p class="auth-footer-text">New user?</p>
-    <a href="register.html" class="btn-outline" id="goRegister">
-      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-        <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/>
-        <circle cx="9" cy="7" r="4"/>
-        <line x1="19" y1="8" x2="19" y2="14"/>
-        <line x1="22" y1="11" x2="16" y2="11"/>
-      </svg>
-      Register
-    </a>
-  </div>
-
+  </div><!-- /auth-right -->
 </div><!-- /auth-card -->
 
 <script src="auth.js"></script>
 <script>
-/* ── Theme (apply before paint) ── */
+/* ── Theme ── */
 (function () {
   const t = localStorage.getItem('mm_theme');
   if (t === 'dark') document.documentElement.setAttribute('data-theme', 'dark');
@@ -143,17 +181,11 @@
 (function () {
   if (localStorage.getItem('mm_token')) window.location.href = 'index.html';
   const msg = sessionStorage.getItem('auth_msg');
-  if (msg) {
-    showEl('loginSuccess', msg);
-    sessionStorage.removeItem('auth_msg');
-  }
+  if (msg) { showEl('loginSuccess', msg); sessionStorage.removeItem('auth_msg'); }
 })();
 
 /* ── Helpers ── */
-function showEl(id, text) {
-  const el = document.getElementById(id);
-  el.textContent = text; el.classList.add('show');
-}
+function showEl(id, text) { const el = document.getElementById(id); el.textContent = text; el.classList.add('show'); }
 function hideEl(id) { document.getElementById(id).classList.remove('show'); }
 function countdown(elId, secs, done) {
   const el = document.getElementById(elId);
@@ -215,9 +247,7 @@ document.getElementById('fpSendBtn').addEventListener('click', async () => {
   const btn    = document.getElementById('fpSendBtn');
   hideEl('fpError'); hideEl('fpSuccess');
 
-  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
-    showEl('fpError', 'Enter a valid email address.'); return;
-  }
+  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) { showEl('fpError', 'Enter a valid email address.'); return; }
   btn.disabled = true; btn.textContent = 'Sending…';
   try {
     const r = await AuthAPI.forgotSendOTP(email);
@@ -233,7 +263,7 @@ document.getElementById('fpSendBtn').addEventListener('click', async () => {
   }
 });
 
-/* ── Forgot: Reset password ── */
+/* ── Forgot: Reset ── */
 document.getElementById('fpResetBtn').addEventListener('click', async () => {
   const email  = document.getElementById('fpEmail').value.trim();
   const otp    = document.getElementById('fpOtp').value.trim();
@@ -250,15 +280,12 @@ document.getElementById('fpResetBtn').addEventListener('click', async () => {
     const r = await AuthAPI.forgotReset(email, otp, newPwd);
     if (r.error) { showEl('fpError', r.error); }
     else {
-      showEl('fpSuccess', 'Password reset! You can now log in with your new password.');
+      showEl('fpSuccess', 'Password reset! You can now log in.');
       document.getElementById('fpStepB').style.display = 'none';
       document.getElementById('fpEmail').value = '';
     }
-  } catch {
-    showEl('fpError', 'Cannot connect to server.');
-  } finally {
-    btn.disabled = false; sp.classList.remove('show');
-  }
+  } catch { showEl('fpError', 'Cannot connect to server.'); }
+  finally { btn.disabled = false; sp.classList.remove('show'); }
 });
 
 document.getElementById('fpBack').addEventListener('click', e => {
