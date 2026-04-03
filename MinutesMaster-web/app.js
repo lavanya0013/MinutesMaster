@@ -792,6 +792,152 @@ async function downloadMomAsImage(id) {
   }
 }
 
+/* ---- Notice PDF Generator ---- */
+function extractNoticeDetails(transcript) {
+  const details = {
+    date: 'Monday, 8th December 2025',
+    room: '603',
+    time: '2:00PM - 4:00PM',
+    auditors: 'Prof. Pallavi Chavan, Dr. Yogita Mistry'
+  };
+  if (!transcript) return details;
+
+  const text = transcript.toLowerCase();
+  
+  const dateMatch = text.match(/(monday|tuesday|wednesday|thursday|friday|saturday|sunday)?,? (\d{1,2}(st|nd|rd|th)? (january|february|march|april|may|june|july|august|september|october|november|december)( \d{4})?)/i);
+  if (dateMatch) details.date = cap1(dateMatch[0]);
+
+  const roomMatch = text.match(/room (\d{3,4}|\w+)/i);
+  if (roomMatch) details.room = roomMatch[1].toUpperCase();
+
+  const timeMatch = text.match(/(\d{1,2}(:\d{2})?\s*(am|pm))\s*(to|-)\s*(\d{1,2}(:\d{2})?\s*(am|pm))/i);
+  if (timeMatch) details.time = `${timeMatch[1].toUpperCase()} - ${timeMatch[5].toUpperCase()}`;
+
+  const audMatch = text.match(/auditors?(?: are| is)? ([a-z\s\.,]+?)(?:\.|and |$)/i);
+  if (audMatch && audMatch[1].length > 5 && audMatch[1].length < 50) {
+    details.auditors = cap1(audMatch[1].trim());
+  }
+
+  return details;
+}
+
+async function downloadNoticeAsPdf(id) {
+  const m = AppStorage.getMeeting(id || currentMeetingId);
+  if (!m) {
+    showToast('No meeting selected');
+    return;
+  }
+
+  const btn = document.getElementById('btnDownloadNotice');
+  if (btn) { btn.disabled = true; btn.textContent = 'Generating...'; }
+
+  try {
+    if (!window.jspdf) {
+      showToast('PDF library not loaded yet');
+      return;
+    }
+
+    const { jsPDF } = window.jspdf;
+    const lhSrc = (typeof LETTERHEAD_B64 !== 'undefined') ? LETTERHEAD_B64 : 'letterhead.png';
+
+    const pdf = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' });
+    const pageW  = 210;
+    const pageH  = 297;
+    const margin = 20;
+
+    pdf.addImage(lhSrc, 'JPEG', 0, 0, pageW, pageH);
+
+    let y = 45;
+
+    const centerText = (text, size, style = 'normal', color = [0,0,0]) => {
+      pdf.setFontSize(size);
+      pdf.setFont('times', style);
+      pdf.setTextColor(...color);
+      const tw = pdf.getStringUnitWidth(text) * size / pdf.internal.scaleFactor;
+      pdf.text(text, (pageW - tw) / 2, y);
+      y += (size * 0.45);
+    };
+
+    centerText('DEPARTMENT OF INFORMATION TECHNOLOGY', 14, 'bold');
+    y += 1;
+    centerText('Academic Year 2025-26', 12, 'bold');
+    y += 1;
+    centerText('ODD Semester', 12, 'bold');
+    
+    y += 8;
+    centerText('Notice', 14, 'bold', [0, 0, 0]);
+    y += 10;
+
+    pdf.setFontSize(11);
+    pdf.setFont('times', 'bold');
+    pdf.text('Ref. No.: DYPU/RAIT/DOIT/2025/ODD/Notice/01', margin, y);
+    
+    const dateStr = `Date: ${new Date().toLocaleDateString('en-GB')}`;
+    const dateW = pdf.getStringUnitWidth(dateStr) * 11 / pdf.internal.scaleFactor;
+    pdf.text(dateStr, pageW - margin - dateW, y);
+    
+    y += 15;
+
+    pdf.setFont('times', 'normal');
+    pdf.setFontSize(12);
+    const bodyText = "This is to inform all the mentors of Department of Information Technology, that Mentor file audit is scheduled as follows.";
+    const lines = pdf.splitTextToSize(bodyText, pageW - margin * 2);
+    pdf.text(lines, margin, y, { maxWidth: pageW - margin * 2, align: 'justify' });
+    y += lines.length * 6 + 4;
+
+    pdf.setFont('times', 'bold');
+    pdf.text('Mentor File Audit Schedule:', margin, y);
+    y += 8;
+
+    const details = extractNoticeDetails(m.transcript);
+    
+    pdf.setFont('times', 'normal');
+    pdf.text(`1. Date: ${details.date}`, margin + 10, y); y += 8;
+    pdf.text(`2. Room No.: ${details.room}`, margin + 10, y); y += 8;
+    pdf.text(`3. Time: ${details.time}`, margin + 10, y); y += 8;
+    pdf.text(`4. Name of the Auditors: ${details.auditors}`, margin + 10, y); y += 15;
+
+    y = pageH - 50; 
+    pdf.setFont('times', 'bold');
+    
+    pdf.text('Mentor Co-ordinator', margin, y);
+    pdf.text('Dr. Yogita Mistry', margin, y + 6);
+    
+    const hrdTitle = 'HOD';
+    const hrdName = 'Prof. Pallavi Chavan';
+    const hw = pdf.getStringUnitWidth(hrdName) * 12 / pdf.internal.scaleFactor;
+    const titleW = pdf.getStringUnitWidth(hrdTitle) * 12 / pdf.internal.scaleFactor;
+    
+    pdf.text(hrdTitle, pageW - margin - titleW, y);
+    pdf.text(hrdName, pageW - margin - hw, y + 6);
+
+    const fileName = `Notice-${(m.name || 'meeting').replace(/\\s+/g, '-')}.pdf`;
+    if (window.showSaveFilePicker) {
+      const pdfBlob = pdf.output('blob');
+      const fileHandle = await window.showSaveFilePicker({
+        suggestedName: fileName,
+        types: [{ description: 'PDF Document', accept: { 'application/pdf': ['.pdf'] } }],
+      });
+      const writable = await fileHandle.createWritable();
+      await writable.write(pdfBlob);
+      await writable.close();
+    } else {
+      pdf.save(fileName);
+    }
+    showToast('Notice PDF saved \u2713');
+  } catch (err) {
+    if (err && err.name === 'AbortError') return;
+    console.error('Notice PDF failed:', err);
+    showToast('Notice PDF generation failed');
+  } finally {
+    if (btn) {
+      btn.disabled = false;
+      btn.innerHTML = '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="vertical-align:-2px;margin-right:4px"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>Download Notice';
+    }
+  }
+}
+
+
 
 /* ---- Settings ---- */
 function loadSettings() {
@@ -905,6 +1051,8 @@ document.addEventListener('DOMContentLoaded', async () => {
     }));
   document.getElementById('btnRegenerateMom').addEventListener('click', () => generateMoM(currentMeetingId));
   document.getElementById('btnDownloadLetterhead').addEventListener('click', () => downloadMomAsImage(currentMeetingId));
+  const btnDNotice = document.getElementById('btnDownloadNotice');
+  if (btnDNotice) btnDNotice.addEventListener('click', () => downloadNoticeAsPdf(currentMeetingId));
 
   // Tabs
   document.querySelectorAll('.tab-btn').forEach(btn =>
