@@ -12,6 +12,7 @@ const {
   generateOTP, sendOTP, storeOTP, verifyOTP, isEmailVerified, clearOTP,
   hashPassword, verifyPassword, signToken, authMiddleware, verifyEmailSetup,
 } = require('./auth');
+const recordingsRouter = require('./routes/recordings');
 
 const app  = express();
 const PORT = process.env.PORT || 3001;
@@ -195,6 +196,9 @@ app.delete('/api/meetings/:id', authMiddleware, (req, res) => {
   db.run('DELETE FROM meetings WHERE id = ?', [req.params.id]);
   res.json({ success: true });
 });
+
+// ═══════════════════════════ DEMO RECORDINGS ═══════════════════════════
+app.use('/api/recordings', recordingsRouter);
 
 app.get('/api/health', (_, res) => res.json({ ok: true }));
 app.use((_, res) => res.status(404).json({ error: 'Not found.' }));

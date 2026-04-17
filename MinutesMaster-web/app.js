@@ -94,6 +94,77 @@
   console.log('[AppStorage] Ready ✓');
 })();
 
+/* ============================================================
+   DEMO MEETING SEED — always available in history for demo
+   ============================================================ */
+(function injectDemoMeeting() {
+  var DEMO_VERSION = 'v2';
+  var STORAGE_KEY  = 'meetily_meetings';
+  var DEMO_KEY     = 'mm_demo_injected';
+
+  if (localStorage.getItem(DEMO_KEY) === DEMO_VERSION) return;
+
+  var demoTranscript = "Good morning everyone. Thank you for joining this meeting. The purpose of today's meeting is to discuss the rescheduling of the internal examinations for the Information Technology department. As we are all aware, several students have raised concerns about the current exam dates conflicting with their project submission deadlines. I would like to begin by hearing from the faculty coordinators. Dr. Mistry, could you please share your observations? Yes, thank you. I have spoken with multiple students and they have expressed genuine difficulty with the current schedule. The internal exams are scheduled for 22nd April, and the major project submissions are also due around the same time. This overlap is causing significant stress among the students. I suggest we consider postponing the internal exams by at least one week. That would give students adequate time to prepare for both. That is a very valid point. I propose that we reschedule the internal exams from 22nd April to 29th April 2026. This one-week extension should give students sufficient time. What do the other faculty members think? I agree with the proposal. A one-week extension is reasonable and manageable for faculty as well. We can adjust the question paper setting timeline accordingly. I also support the reschedule. We should communicate this change to students immediately to avoid any confusion. The notice should be formal and clearly state the new dates. Very well. Let us summarize the decision. The internal examinations for the Department of Information Technology, originally scheduled for 22nd April 2026, will be postponed to 29th April 2026. All faculty members are requested to update their evaluation schedules. The department coordinator will issue a formal notice to all students by end of day. Dr. Mistry, could you please draft the notice and share it with the HOD for approval before circulating? Certainly, I will prepare the notice and submit it for approval within the next two hours. Any other action items before we close? We should also notify the examination cell about this reschedule so that the hall arrangements can be updated accordingly. Good point. The department secretary will coordinate with the examination cell. I will follow up on that as well. Is there anything else? I think we have covered all the key points. To summarize: exam dates are rescheduled, a formal notice will be issued, and the examination cell will be informed. Thank you everyone for your time and cooperation. This meeting is now concluded.";
+
+  var demoMom = {
+    generatedAt: "2026-04-18T10:25:00.000Z",
+    header: {
+      title: "Discussion on Exam Rescheduling",
+      date: "2026-04-18T10:00:00.000Z",
+      duration: 1500,
+      organiser: "Dr. Sharad Jadhav, HOD IT",
+      location: "Department Conference Room, RAIT",
+      wordCount: 412
+    },
+    discussionPoints: [
+      "The purpose of the meeting was to discuss rescheduling of internal examinations for the IT department.",
+      "Students raised concerns about exam dates conflicting with project submission deadlines.",
+      "Dr. Mistry observed that students expressed genuine difficulty with the current schedule.",
+      "The overlap between exams on 22nd April and project submissions is causing significant stress.",
+      "Faculty suggested postponing the exams by at least one week to give students adequate time."
+    ],
+    decisions: [
+      "Internal examinations originally scheduled for 22nd April 2026 will be postponed to 29th April 2026.",
+      "All faculty members are requested to update their evaluation schedules accordingly.",
+      "The department coordinator will issue a formal notice to all students by end of day.",
+      "The examination cell will be notified about the reschedule for hall arrangement updates."
+    ],
+    actionItems: [
+      "Dr. Mistry will draft the formal notice and submit it to the HOD for approval within two hours.",
+      "The department secretary will coordinate with the examination cell regarding hall arrangements.",
+      "All faculty members will update their question paper setting timelines accordingly.",
+      "Formal communication will be circulated to all students immediately after HOD approval."
+    ],
+    closingNotes: [
+      "Meeting concluded with a unanimous agreement on the exam reschedule.",
+      "All key decisions and action items were summarized before closing.",
+      "Thank you everyone for your time and cooperation."
+    ],
+    rawTranscript: demoTranscript
+  };
+
+  var demoMeeting = {
+    id: "demo1",
+    name: "Discussion on Exam Rescheduling",
+    createdAt: "2026-04-18T10:00:00.000Z",
+    durationSeconds: 1500,
+    wordCount: 412,
+    transcript: demoTranscript,
+    segments: [{ text: demoTranscript }],
+    mom: demoMom
+  };
+
+  try {
+    var existing = JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]');
+    var filtered = existing.filter(function(m) { return m.id !== 'demo1'; });
+    filtered.unshift(demoMeeting);
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(filtered));
+    localStorage.setItem(DEMO_KEY, DEMO_VERSION);
+    console.log('[Demo] Demo meeting injected into history successfully.');
+  } catch (e) {
+    console.warn('[Demo] Could not inject demo meeting:', e.message);
+  }
+})();
 
 /* ---- Router ---- */
 let currentView = 'dashboard';
@@ -175,8 +246,12 @@ function formatDuration(s) {
 }
 
 /* ---- Dashboard ---- */
+let _dashboardMeetings = []; // cached for search
+
 async function refreshDashboard() {
   const meetings = await AppStorage.getMeetings();
+  _dashboardMeetings = meetings;
+
   const stats = {
     count:        meetings.length,
     totalWords:   meetings.reduce((a, m) => a + (m.wordCount   || 0), 0),
@@ -185,7 +260,47 @@ async function refreshDashboard() {
   document.getElementById('statMeetings').textContent = stats.count;
   document.getElementById('statTime').textContent = formatDuration(stats.totalSeconds);
   document.getElementById('statWords').textContent = stats.totalWords.toLocaleString();
+
+  // Reset search box and show recent
+  const searchEl = document.getElementById('dashSearchInput');
+  if (searchEl) searchEl.value = '';
   renderMeetingCards('recentMeetings', meetings.slice(0, 5));
+}
+
+function searchTranscripts(query) {
+  const container = document.getElementById('recentMeetings');
+  const q = query.trim().toLowerCase();
+
+  if (!q) {
+    // Empty query — show recent 5
+    renderMeetingCards('recentMeetings', _dashboardMeetings.slice(0, 5));
+    return;
+  }
+
+  // Split query into words — ALL words must appear in the name OR transcript
+  const words = q.split(/\s+/).filter(Boolean);
+
+  const results = _dashboardMeetings.filter(m => {
+    const name       = (m.name       || '').toLowerCase();
+    const transcript = (m.transcript || '').toLowerCase();
+    const combined   = name + ' ' + transcript;
+    return words.every(w => combined.includes(w));
+  });
+
+  if (!results.length) {
+    container.innerHTML = `
+      <div class="empty-state empty-state--minimal">
+        <div class="empty-folder-icon">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+            <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
+          </svg>
+        </div>
+        <p class="empty-state-text">No transcripts match &ldquo;${escHtml(query.trim())}&rdquo;</p>
+      </div>`;
+    return;
+  }
+
+  renderMeetingCards('recentMeetings', results);
 }
 
 /* ---- Meetings list ---- */
@@ -198,12 +313,25 @@ function renderMeetingCards(containerId, meetings) {
   container.innerHTML = '';
 
   if (!meetings.length) {
-    container.innerHTML = `
-      <div class="empty-state">
-        <div class="empty-icon">🎙️</div>
-        <p>No meetings yet. Start your first recording.</p>
-        <button class="btn-primary btn-sm" onclick="showView('record')">New Recording</button>
-      </div>`;
+    // Dashboard recent meetings: minimal empty state
+    if (containerId === 'recentMeetings') {
+      container.innerHTML = `
+        <div class="empty-state empty-state--minimal">
+          <div class="empty-folder-icon">
+            <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+              <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/>
+            </svg>
+          </div>
+          <p class="empty-state-text">No recent activity</p>
+        </div>`;
+    } else {
+      container.innerHTML = `
+        <div class="empty-state">
+          <div class="empty-icon">🎙️</div>
+          <p>No meetings yet. Start your first recording.</p>
+          <button class="btn-primary btn-sm" onclick="showView('record')">New Recording</button>
+        </div>`;
+    }
     return;
   }
 
@@ -225,6 +353,8 @@ function renderMeetingCards(containerId, meetings) {
     card.addEventListener('click', () => openMeeting(m.id));
     container.appendChild(card);
   });
+
+  // Footer removed as requested
 }
 
 /* ---- Recording ---- */
@@ -798,7 +928,7 @@ function extractNoticeDetails(transcript) {
     date: 'Monday, 8th December 2025',
     room: '603',
     time: '2:00PM - 4:00PM',
-    auditors: 'Prof. Pallavi Chavan, Dr. Yogita Mistry'
+    auditors: 'Dr. Sharad Jadhav, Dr. Sthuthi Rachel Joshua'
   };
   if (!transcript) return details;
 
@@ -901,10 +1031,10 @@ async function downloadNoticeAsPdf(id) {
     pdf.setFont('times', 'bold');
     
     pdf.text('Mentor Co-ordinator', margin, y);
-    pdf.text('Dr. Yogita Mistry', margin, y + 6);
+    pdf.text('Dr. Sthuthi Rachel Joshua', margin, y + 6);
     
-    const hrdTitle = 'HOD';
-    const hrdName = 'Prof. Pallavi Chavan';
+    const hrdTitle = 'HOD IT';
+    const hrdName = 'Dr. Sharad Jadhav';
     const hw = pdf.getStringUnitWidth(hrdName) * 12 / pdf.internal.scaleFactor;
     const titleW = pdf.getStringUnitWidth(hrdTitle) * 12 / pdf.internal.scaleFactor;
     
@@ -1027,6 +1157,20 @@ document.addEventListener('DOMContentLoaded', async () => {
   document.getElementById('sidebarClose').addEventListener('click', () =>
     document.getElementById('sidebar').classList.remove('open'));
 
+  // Dashboard — search transcript
+  const dashSearchEl = document.getElementById('dashSearchInput');
+  if (dashSearchEl) {
+    dashSearchEl.addEventListener('input', (e) => searchTranscripts(e.target.value));
+    // Clear on Escape
+    dashSearchEl.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape') {
+        dashSearchEl.value = '';
+        searchTranscripts('');
+        dashSearchEl.blur();
+      }
+    });
+  }
+
   // Dashboard
   document.getElementById('quickRecord').addEventListener('click', () => showView('record'));
 
@@ -1049,7 +1193,6 @@ document.addEventListener('DOMContentLoaded', async () => {
       showToast('Meeting deleted');
       showView('meetings');
     }));
-  document.getElementById('btnRegenerateMom').addEventListener('click', () => generateMoM(currentMeetingId));
   document.getElementById('btnDownloadLetterhead').addEventListener('click', () => downloadMomAsImage(currentMeetingId));
   const btnDNotice = document.getElementById('btnDownloadNotice');
   if (btnDNotice) btnDNotice.addEventListener('click', () => downloadNoticeAsPdf(currentMeetingId));

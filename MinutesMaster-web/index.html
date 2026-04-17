@@ -109,22 +109,40 @@
             <h1>Dashboard</h1>
             <p class="page-sub">All your meetings, kept private.</p>
           </div>
-          <button class="btn-primary" id="quickRecord">
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="4" fill="currentColor" stroke="none"/></svg>
-            New Recording
-          </button>
+          <div class="dashboard-header-right">
+            <div class="dash-search-wrap">
+              <svg class="dash-search-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+              <input class="dash-search-input" id="dashSearchInput" type="text" placeholder="Search transcript..." autocomplete="off" />
+            </div>
+            <button class="btn-primary" id="quickRecord">
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3Z"/>
+                <path d="M19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" y1="19" x2="12" y2="22"/>
+              </svg>
+              New Recording
+            </button>
+          </div>
         </div>
 
         <div class="stats-row">
           <div class="stat-box">
+            <div class="stat-icon stat-icon--meetings">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+            </div>
             <div class="stat-num" id="statMeetings">0</div>
             <div class="stat-lbl">Meetings</div>
           </div>
           <div class="stat-box">
+            <div class="stat-icon stat-icon--time">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+            </div>
             <div class="stat-num" id="statTime">0m</div>
             <div class="stat-lbl">Total Time</div>
           </div>
           <div class="stat-box">
+            <div class="stat-icon stat-icon--words">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
+            </div>
             <div class="stat-num" id="statWords">0</div>
             <div class="stat-lbl">Words Transcribed</div>
           </div>
@@ -161,7 +179,10 @@
           <div class="rec-btn-row">
             <button class="btn-record" id="btnRecord" aria-label="Start recording">
               <span id="btnRecordInner">
-                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="4" fill="currentColor" stroke="none"/></svg>
+                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                  <circle cx="12" cy="12" r="10"/>
+                  <circle cx="12" cy="12" r="4" fill="currentColor" stroke="none"/>
+                </svg>
               </span>
             </button>
           </div>
@@ -235,7 +256,6 @@
                 <button class="btn-secondary btn-sm" id="btnDownloadNotice">
                   <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="vertical-align:-2px;margin-right:4px"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>Download Notice
                 </button>
-                <button class="btn-secondary btn-sm" id="btnRegenerateMom">↻ Regenerate</button>
               </div>
             </div>
             <div class="mom-area" id="detailMom">
